@@ -6,6 +6,15 @@ namespace MeticulousResearch.Core.Data.Migrations;
 /// Migration 1 — the initial relational schema (SPEC §5): Project, Resource, Conversation,
 /// Message, Artifact, ArtifactVersion, Setting. Column names are snake_case to match the SPEC
 /// and are pinned; downstream features assert on specific columns.
+/// <para>
+/// Contract addition (owned by data-store-migrations): <c>Resource.extracted_text</c> is a
+/// denormalized, in-DB copy of the resource body text whose canonical on-disk form is
+/// <c>extracted.txt</c> (SPEC §5 lists <c>extracted_path</c> for that file). It exists so that
+/// the external-content <c>ResourceFts</c> table (see <see cref="M0002_FullTextSearch"/>) can
+/// index searchable BODY text without any DDL change from the downstream <c>full-text-search</c>
+/// feature, which only reads and asserts index sync. All SPEC §5 columns are retained unchanged;
+/// this is additive.
+/// </para>
 /// </summary>
 public sealed class M0001_InitialSchema : IMigration
 {
@@ -37,6 +46,7 @@ public sealed class M0001_InitialSchema : IMigration
                 source_uri      TEXT NULL,
                 blob_path       TEXT NULL,
                 extracted_path  TEXT NULL,
+                extracted_text  TEXT NULL,
                 byte_size       INTEGER NULL,
                 token_estimate  INTEGER NULL,
                 enabled         INTEGER NOT NULL DEFAULT 1,

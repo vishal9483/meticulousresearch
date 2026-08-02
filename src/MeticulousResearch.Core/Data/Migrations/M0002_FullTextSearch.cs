@@ -7,6 +7,13 @@ namespace MeticulousResearch.Core.Data.Migrations;
 /// text, message content, and artifact version content. Each FTS table is an external-content
 /// index (<c>content=</c>) keyed to its base table's rowid, kept in sync by AFTER
 /// INSERT/UPDATE/DELETE triggers. EF cannot model virtual tables, so this is raw SQL.
+/// <para>
+/// <c>ResourceFts</c> indexes <c>Resource(title, extracted_text)</c> — the denormalized body
+/// text (see <see cref="M0001_InitialSchema"/>), so downstream full-text search matches resource
+/// BODY text, not just the title. <c>MessageFts</c> and <c>ArtifactVersionFts</c> index the real
+/// <c>content</c> column of their base tables. The sync-trigger contract is owned here; the
+/// full-text-search feature only reads and asserts sync.
+/// </para>
 /// </summary>
 public sealed class M0002_FullTextSearch : IMigration
 {
@@ -15,14 +22,17 @@ public sealed class M0002_FullTextSearch : IMigration
 
     public void Up(SqliteConnection connection)
     {
-        // Resource extracted text. The searchable text is loaded into extracted_path files on
-        // disk; we index a denormalized "extracted_text" column populated by later features. To
-        // keep the FTS contract concrete now, index the columns present on the base row and expose
-        // a stable "text" column the search feature will target.
+        // Resource extracted text. Canonical body text lives on disk in extracted.txt
+        // (Resource.extracted_path), and is denormalized into the Resource.extracted_text column
+        // so this external-content FTS table can index the searchable BODY text (not the file
+        // path). ResourceFts therefore indexes title + extracted_text; the triggers below keep it
+        // in sync on insert/update/delete. Project scoping is done by the search feature joining
+        // FTS hits back to Resource on rowid (see full-text-search/phase.md) — this feature owns
+        // only the DDL/triggers.
         CreateFts(connection,
             ftsTable: "ResourceFts",
             baseTable: "Resource",
-            columns: new[] { "title", "extracted_path" });
+            columns: new[] { "title", "extracted_text" });
 
         CreateFts(connection,
             ftsTable: "MessageFts",

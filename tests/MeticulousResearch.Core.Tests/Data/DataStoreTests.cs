@@ -131,6 +131,91 @@ public sealed class DataStoreTests : IDisposable
         Assert.Contains("fts5", sql, StringComparison.OrdinalIgnoreCase);
     }
 
+    // Scenario: Full-text search virtual tables exist — round-trip strengthening.
+    // The exists-check above proves ResourceFts is an fts5 table; this proves the trigger
+    // actually indexes the resource BODY text (Resource.extracted_text), so a MATCH on a word
+    // that appears only in the body — never in the title or any file path — returns the row.
+    // This is the assertion whose absence let the earlier "index the path, not the body" leak
+    // through review. Strengthens the "@unit @integration" FTS scenario.
+    [Fact]
+    [Trait("Category", "integration")]
+    public void ResourceFts_indexes_extractedBodyText_notJustTitle()
+    {
+        using var store = NewStore();
+        store.Initialize();
+
+        using var conn = store.OpenConnection();
+
+        // Seed a Project (FK parent) and a Resource whose body text contains a word that appears
+        // nowhere in the title nor in extracted_path — proving BODY text is what gets indexed.
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText =
+                "INSERT INTO Project (id, name, archived, created_at, updated_at) " +
+                "VALUES ('P-fts', 'FTS', 0, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');";
+            cmd.ExecuteNonQuery();
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText =
+                "INSERT INTO Resource (id, project_id, title, type, extracted_path, extracted_text, enabled, created_at, updated_at) " +
+                "VALUES ('R-fts', 'P-fts', 'Wafer note', 'text', 'projects/P-fts/resources/R-fts/extracted.txt', " +
+                "$body, 1, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');";
+            cmd.Parameters.AddWithValue("$body", "Wafer starts rose sharply across leading nodes.");
+            cmd.ExecuteNonQuery();
+        }
+
+        // A MATCH on a body-only word returns the resource (proves body text is indexed).
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT r.title FROM ResourceFts f JOIN Resource r ON r.rowid = f.rowid WHERE ResourceFts MATCH $q;";
+            cmd.Parameters.AddWithValue("$q", "sharply");
+            Assert.Equal("Wafer note", Convert.ToString(cmd.ExecuteScalar()));
+        }
+
+        // A MATCH on the file-path token 'extracted' must NOT return it — the path is not indexed.
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT COUNT(*) FROM ResourceFts WHERE ResourceFts MATCH $q;";
+            cmd.Parameters.AddWithValue("$q", "projects");
+            Assert.Equal(0L, Convert.ToInt64(cmd.ExecuteScalar()));
+        }
+
+        // Sync on UPDATE: re-extraction replaces the body; old word gone, new word found.
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "UPDATE Resource SET extracted_text = $body WHERE id = 'R-fts';";
+            cmd.Parameters.AddWithValue("$body", "Foundry capacity grew twelve percent.");
+            cmd.ExecuteNonQuery();
+        }
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT COUNT(*) FROM ResourceFts WHERE ResourceFts MATCH $q;";
+            cmd.Parameters.AddWithValue("$q", "sharply");
+            Assert.Equal(0L, Convert.ToInt64(cmd.ExecuteScalar()));
+        }
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT COUNT(*) FROM ResourceFts WHERE ResourceFts MATCH $q;";
+            cmd.Parameters.AddWithValue("$q", "foundry");
+            Assert.Equal(1L, Convert.ToInt64(cmd.ExecuteScalar()));
+        }
+
+        // Sync on DELETE: removing the resource drops it from the index.
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "DELETE FROM Resource WHERE id = 'R-fts';";
+            cmd.ExecuteNonQuery();
+        }
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "SELECT COUNT(*) FROM ResourceFts WHERE ResourceFts MATCH $q;";
+            cmd.Parameters.AddWithValue("$q", "foundry");
+            Assert.Equal(0L, Convert.ToInt64(cmd.ExecuteScalar()));
+        }
+    }
+
     // ---------------------------------------------------------------- Schema shape
 
     // Scenario: Message table records token and cost columns
