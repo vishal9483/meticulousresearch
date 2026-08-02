@@ -1,23 +1,18 @@
-﻿using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using MeticulousResearch.App.ViewModels;
 
 namespace MeticulousResearch.App;
 
 /// <summary>
-/// Interaction logic for MainWindow.xaml
+/// The shell window (SPEC §4). Its <see cref="ShellViewModel"/> is injected so the content
+/// region and top-level nav bind to real state; startup lands on the Projects home.
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    /// <summary>Creates the shell window bound to the injected <paramref name="shellViewModel"/>.</summary>
+    public MainWindow(ShellViewModel shellViewModel)
     {
         InitializeComponent();
+        DataContext = shellViewModel;
     }
 }
