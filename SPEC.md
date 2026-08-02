@@ -244,9 +244,17 @@ Export is a first-class, deliverable-grade feature — not a raw content dump.
   (minimal chrome), and "Plain" (content only).
 
 ### 3.5 Global / cross-cutting
-- **Settings** — API key entry (stored via Windows DPACI/credential vault, not plaintext),
-  default model, context budget, data directory location, theme (light/dark/system),
-  telemetry off by default.
+- **Settings** — API key entry (stored via Windows DPAPI/credential vault, not plaintext),
+  API base URL / endpoint (defaults to the public Anthropic API, overridable for gateway/
+  proxy deployments), default model, context budget, data directory location, theme
+  (light/dark/system), telemetry off by default.
+- **API key & endpoint resolution** — both the key and the base URL may be supplied via the
+  environment, which **takes precedence** over stored settings (§7.5):
+  - **API key:** `ANTHROPIC_API_KEY` env var → secure key store (Credential Manager/DPAPI) →
+    "no key configured" error.
+  - **Base URL:** `ANTHROPIC_BASE_URL` env var → persisted base-URL setting → default public
+    Anthropic API. The endpoint is **never hardcoded**; the direct-API client and the sidecar
+    both honor the resolved value so gateway/proxy deployments work without a rebuild.
 - **Command palette** (Ctrl+K) — jump to project, new conversation, new artifact, search.
 - **Keyboard shortcuts** — new project/conversation/artifact, send (Ctrl+Enter), stop (Esc),
   search (Ctrl+K).
@@ -544,6 +552,13 @@ are logged and visible in the conversation (transparency).
 
 ### 7.5 Security
 - API key stored via **Windows Credential Manager / DPAPI**, never in SQLite or plaintext.
+- **Key resolution order:** `ANTHROPIC_API_KEY` environment variable (if set) **wins**, then
+  the secure key store, then a "no key configured" error. The env var is read at request/
+  launch time and, like the stored key, is never written to SQLite, settings files, or the
+  sidecar command line.
+- **Endpoint resolution order:** `ANTHROPIC_BASE_URL` environment variable (if set) **wins**,
+  then the persisted base-URL setting, then the default public Anthropic API. The resolved
+  base URL is passed to both the direct-API client and the sidecar; it is never hardcoded.
 - Sidecar bound to loopback only, with a per-session auth token.
 - No telemetry by default; all data local.
 
