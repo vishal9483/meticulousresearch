@@ -1,0 +1,34 @@
+## .NET build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+## Test results
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+coverage/
+
+## Rider / VS / VS Code
+.vs/
+.idea/
+*.user
+*.suo
+
+## Local app data / secrets (never commit)
+db.sqlite
+db.sqlite-*
+*.env
+.env
+appsettings.*.local.json
+
+## OS
+Thumbs.db
+.DS_Store
+
+## NuGet
+*.nupkg
+.nuget/
