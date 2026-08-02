@@ -1,16 +1,27 @@
 # MeticulousResearch Desktop — Specification
 
-> A local-first Windows desktop application, modeled on the Claude Desktop app and
-> Claude Projects, with a **deliberately reduced scope**: its center of gravity is
-> **creating and managing research projects** — their resources, their artifacts, and
-> model-selectable Q&A — rather than being a general-purpose chat client.
+> A polished, local-first Windows desktop application that gives a market-research analyst a
+> **purpose-built workspace** for producing publication-quality industry research —
+> market/competitive/customer/business intelligence reports, forecasts, and briefs — grounded
+> in the analyst's own source material and drafted with Claude. It is **focused, not
+> feature-thin**: every capability an analyst needs to go from raw sources to a branded,
+> exportable deliverable is present and complete in **version 1.0**.
 
-- **Status:** Draft v1 (spec only — no code yet)
+- **Status:** v1.0 Specification — release-ready scope (implementation to follow)
+- **Product owner audience:** Meticulous Research (market intelligence & business consulting firm)
 - **Date:** 2026-08-03
 - **Platform:** Windows 11 (x64/arm64)
-- **UI stack:** .NET 8 + WPF (C#)
-- **AI backend:** Claude Agent SDK (run as a sidecar process — see §7)
-- **Storage:** Local-only — SQLite (metadata) + files on disk (blobs)
+- **UI stack:** .NET 8 + WPF (C#), Fluent design system
+- **AI backend:** Claude Agent SDK (primary, run as a sidecar — §7.2) + C# direct-API fallback
+- **Storage:** Local-first — SQLite (metadata) + files on disk (blobs); per-project backup/restore
+
+### Product vision
+MeticulousResearch Desktop is the tool a Meticulous Research analyst opens to turn a folder of
+interviews, filings, datasets, and web sources into a **finished research report** — with the
+firm's structure, tone, and branding — in a fraction of the usual time. It is not a general
+chat client; it is a **research production environment**. From version 1.0 it looks and feels
+like a professional, shippable product: coherent visual identity, first-run onboarding,
+report-grade export, dependable generation (retry/backoff, caching), and cost transparency.
 
 ---
 
@@ -27,41 +38,72 @@ self-contained workspace bundling:
 - **Artifacts** — substantial, standalone outputs (documents, tables, code, diagrams) that
   Claude produces, which the user curates, versions, and exports.
 
-### 1.2 What it is *not* (reduced capabilities vs. Claude Desktop)
-Explicitly **out of scope** for v1, to keep focus:
+### 1.2 Scope boundaries (focused by design)
+MeticulousResearch is deliberately scoped to do **one job completely**: research production.
+The following are intentional product boundaries — not gaps — chosen so the app stays fast,
+private, and easy to trust. Each is a considered decision, and the in-scope alternative is
+noted.
 
-- No account system, cloud sync, or multi-user collaboration/sharing.
-- No general (project-less) chat — every conversation lives inside a project.
-- No arbitrary/user-extensible tool use, computer use, or MCP marketplace. (A **fixed,
-  built-in tool set** — file read/search/edit/write plus artifact emit — backs grounding and
-  artifact creation; see §7.4.)
-- No image *generation*; no voice; no browser automation.
-  (Image *input* **is** supported — Claude reads images via its vision capability; see §3.2.)
-- No code *execution* of generated artifacts (they are authored and exported, not run).
-- No mobile/web/cross-platform builds.
+- **Single-user & local-first** — no account system, cloud sync, or multi-user collaboration.
+  *Instead:* per-project backup/restore (zip) and a portable data directory make hand-off and
+  archiving trivial (§8).
+- **Project-scoped work** — no general (project-less) chat; every conversation and deliverable
+  lives inside a research project so provenance is always intact.
+- **Curated, not open-ended, tool use** — no user-extensible tool/computer-use/MCP
+  marketplace. *Instead:* a complete, sandboxed built-in tool set (file read/search/edit/write
+  + artifact emit) backs grounding and authoring (§7.4).
+- **Authoring, not execution** — generated code/table artifacts are authored and exported, not
+  run. No arbitrary code execution keeps the app safe on an analyst's machine.
+- **Vision in, no media generation** — image *input* is fully supported (Claude reads charts,
+  scans, and screenshots via native vision, §3.2). No image generation, voice, or browser
+  automation.
+- **Windows desktop** — a first-class native Windows 11 experience; no mobile/web build in v1.
+
+None of these limit an analyst's ability to produce a complete, professional deliverable — the
+entire source-to-report workflow is supported end-to-end in v1.0.
 
 ### 1.3 Design principles
-1. **Local-first & private** — all data on the user's machine; the only network egress is
+1. **Professional from first launch** — the app looks and behaves like finished commercial
+   software: coherent branding, guided first run, sensible defaults, no dead ends or
+   placeholder screens.
+2. **Local-first & private** — all data on the user's machine; the only network egress is
    to the Anthropic API via the Agent SDK.
-2. **Project as the unit of work** — everything hangs off a project.
-3. **Provenance everywhere** — every artifact records the model, resources, and prompt that
-   produced it.
-4. **Nothing is lost** — artifacts and conversations are versioned; edits never destroy
-   prior state.
+3. **Project as the unit of work** — everything hangs off a research project.
+4. **Provenance everywhere** — every artifact records the model, resources, and prompt that
+   produced it; deliverables can cite their sources.
+5. **Nothing is lost** — artifacts and conversations are versioned; edits never destroy
+   prior state; projects are backup/restore-able.
+6. **Deliverable-grade output** — the end product is a report a firm can ship: branded,
+   structured, exportable to DOCX/PDF/XLSX with a cover page, TOC, and consistent styling.
+7. **Dependable under real load** — generation survives rate limits (retry/backoff), reuses
+   context via prompt caching, and always tells the user what a piece of work costs.
 
 ---
 
 ## 2. Personas & primary use cases
 
-**Persona: the analyst.** Produces research memos, briefs, and structured summaries from a
-pile of source material, iterating with Claude.
+**Primary persona: the research analyst.** Works at a market-intelligence firm producing
+syndicated and custom studies — market sizing and 10-year forecasts, competitive landscapes,
+customer/buyer analysis, and executive briefings across industries (healthcare, semiconductors,
+food & beverage, energy, automotive, etc.). Starts from a pile of source material (analyst
+interviews, company filings, datasets, prior reports, web sources) and must produce a
+polished, branded, client-ready deliverable.
+
+**Secondary persona: the research manager / reviewer.** Reviews drafts, compares versions,
+checks provenance and cost, and exports the final report for the client.
 
 Primary flows:
-1. Create a project, set custom instructions.
-2. Add resources (paste notes, drop in PDFs/DOCX, add URLs).
-3. Ask questions in a conversation, picking a model per the task (fast vs. deep).
-4. Promote a good answer — or ask Claude to draft — into an **artifact**.
-5. Iterate on the artifact via follow-ups; compare versions; export to MD/DOCX/PDF/XLSX.
+1. Create a research project from a **template** (e.g. "Market Research Report",
+   "Competitive Landscape") or blank; set custom instructions (house style, tone, forecast
+   horizon).
+2. Add resources (paste notes, drop in PDFs/DOCX/XLSX/CSV, add URLs, attach charts/images).
+3. Ask questions in a conversation, picking a model per the task (fast lookups vs. deep
+   synthesis), grounded in the project's resources.
+4. Promote a good answer — or ask Claude to draft from a deliverable template — into an
+   **artifact** (report section, forecast table, SWOT, competitive matrix).
+5. Assemble sections into a full report; iterate via follow-ups; compare versions.
+6. Export a **branded, publication-quality** report (DOCX/PDF with cover, TOC, headers) or
+   dataset (XLSX); review cost/usage; back up the project.
 
 ---
 
@@ -126,8 +168,9 @@ Primary flows:
   artifact**, delete.
 - **Stop/cancel** a streaming generation.
 
-### 3.4 Artifacts
-- **Definition:** a substantial, standalone, editable output. Mirrors Claude Artifacts.
+### 3.4 Artifacts & research deliverables
+- **Definition:** a substantial, standalone, editable output. Mirrors Claude Artifacts, tuned
+  for research deliverables.
 - **Types (v1):**
   - Markdown / rich text document
   - Plain text
@@ -137,7 +180,37 @@ Primary flows:
 - **Creation paths:**
   1. *Promote* an assistant turn to a new artifact.
   2. *Generate* directly ("New artifact" → prompt + model + resources).
-  3. *Create blank* and edit manually.
+  3. *Generate from a **deliverable template*** (§3.4.1) — the recommended path for reports.
+  4. *Create blank* and edit manually.
+
+#### 3.4.1 Deliverable templates (research-grade, from v1)
+To produce firm-quality output out of the box, the app ships a library of **research
+deliverable templates**. A template is a structured prompt + section scaffold + output format
+that steers Claude to produce a professionally organized artifact grounded in the project's
+enabled resources. Templates are **config-driven** (editable JSON/Markdown scaffolds, same
+philosophy as the model catalog §6.3) so the firm can add its own house formats without a
+rebuild.
+
+Bundled templates (v1):
+
+| Template | Output shape | Typical sections |
+|----------|--------------|------------------|
+| **Market Research Report** (flagship) | Long-form document | Executive summary; market definition & scope; market sizing & 10-yr forecast; segmentation; drivers/restraints/opportunities; competitive landscape; regional analysis; recommendations; methodology & sources |
+| **Executive Summary / Brief** | 1–2 page document | Key findings, implications, recommended actions |
+| **Competitive Landscape** | Table + narrative | Company, positioning, offerings, strengths/weaknesses, share |
+| **Market Forecast Model** | Table/dataset (→XLSX) | Segment × year matrix, CAGR, base/optimistic/conservative |
+| **SWOT / Porter's Five Forces** | Structured document/diagram | Framework-driven analysis |
+| **Company / Vendor Profile** | Document | Overview, financials, product lines, strategy, SWOT |
+| **Customer / Buyer Insights** | Document | Personas, needs, buying criteria, voice-of-customer |
+| **Trend / Technology Scan** | Document | Emerging tech, maturity, adoption, implications |
+
+- Each template declares: id, display name, description, target artifact type, section
+  scaffold, a generation prompt (with placeholders for scope/horizon/region), and a default
+  model tier recommendation.
+- Templates enforce **grounding-first** prompting: they instruct the model to cite which
+  in-scope resources support each claim and to flag unsupported assertions, so deliverables
+  are defensible.
+- The "New artifact" and "New project" flows both surface the template gallery with previews.
 - **Versioning** — every follow-up edit or regeneration creates a **new immutable version**;
   the artifact keeps an ordered version history. Each version records the model, prompt,
   in-scope resources, and timestamp.
@@ -146,7 +219,29 @@ Primary flows:
   instruction creates a version).
 - **Management:** rename, set current version, revert to a version, duplicate, delete,
   promote-to-resource.
-- **Export** — Markdown, DOCX, PDF, and (for tables) XLSX. Export uses the current version.
+- **Compose a full report** — multiple artifacts can be ordered into a single **report
+  compilation** (a document artifact that references sections in order) and exported as one
+  branded file, so a report assembled from sections exports as a cohesive deliverable.
+
+#### 3.4.2 Branded, publication-quality export (from v1)
+Export is a first-class, deliverable-grade feature — not a raw content dump.
+
+- **Formats:** Markdown, DOCX, PDF, and (for tables/forecast models) XLSX. Export uses the
+  current version (or the composed report order).
+- **Branded document theme:** DOCX/PDF exports apply a professional report template with:
+  - a **cover page** (report title, subtitle, date, project/author, optional firm logo);
+  - an auto-generated **table of contents** with page numbers;
+  - **running headers/footers** (report title, page numbers, confidentiality notice);
+  - consistent heading styles, tables, captions, and a **sources/methodology** section;
+  - a configurable **color accent and logo** in Settings (defaults to a professional navy
+    corporate palette, §3.7) so output matches the firm's identity.
+- **Fidelity:** headings, tables, lists, code blocks, and Mermaid diagrams (rendered to
+  images) all carry through to DOCX/PDF. XLSX export preserves typed columns and formulas
+  where present.
+- **Deterministic & offline:** export runs locally (no network) and produces the same output
+  every time; a preview is shown before saving.
+- **Export presets:** "Client-ready report" (full branding + cover + TOC), "Internal draft"
+  (minimal chrome), and "Plain" (content only).
 
 ### 3.5 Global / cross-cutting
 - **Settings** — API key entry (stored via Windows DPACI/credential vault, not plaintext),
@@ -183,11 +278,51 @@ see what a piece of work costs.
 - **Optional guardrails (config):** a soft per-project monthly budget that, when exceeded,
   shows a warning banner (does not hard-block). Off by default.
 
+### 3.7 Visual identity & design system
+The app ships with a coherent, professional design language so it reads as finished commercial
+software from v1.0.
+
+- **Brand palette:** a corporate **navy/blue** primary (evoking a market-intelligence firm's
+  trusted-advisor tone) with a single accent, neutral grays for surfaces, and semantic
+  success/warning/error colors. Full **light and dark** themes plus "follow system."
+- **Typography:** a clean, professional type scale (a modern sans for UI; a readable serif or
+  sans option for exported report body text). Consistent spacing and 8px grid.
+- **Component library:** built on a Fluent WPF control set (§7.1) — buttons, inputs, tables,
+  cards, dialogs, toasts, and a command palette all drawn from one styled kit; no unstyled
+  default WPF chrome.
+- **Iconography:** a single consistent icon set (Fluent/Lucide-style).
+- **Motion:** subtle, purposeful transitions (streaming cursor, panel slide, progress); never
+  gratuitous.
+- **Empty & loading states:** every list/view has a designed empty state with a clear
+  call-to-action (e.g. "No projects yet — create your first research project") and skeleton
+  loaders during async work. No blank screens.
+- **Error states:** human-readable, actionable messages (missing API key, offline, rate
+  limited, extraction failed) with a recovery action — never a raw stack trace.
+- **App identity:** application icon, product name, and About screen with version; installer
+  branding (§8).
+
+### 3.8 First-run onboarding
+On first launch the app guides the user to a working state so it's usable immediately:
+
+1. **Welcome** — brief product intro and privacy statement (local-first; where data lives).
+2. **API key setup** — enter the Anthropic API key; stored securely (§7.5); a "Test key"
+   button verifies connectivity and lists available models.
+3. **Defaults** — pick default model tier, theme, and data directory (sensible defaults
+   pre-filled).
+4. **Sample project (optional)** — offer to create a fully populated **sample research
+   project** (a couple of resources + an example Market Research Report artifact) so the user
+   can see the whole workflow before adding their own material.
+5. **Done** — land on the Projects home with contextual hints on the primary actions.
+
+Onboarding is skippable and re-runnable from Settings.
+
 ---
 
 ## 4. UX / screen inventory
 
-1. **Home / Projects list** — grid or list of project cards; create/search; archived toggle.
+0. **First-run onboarding** — welcome, API key + test, defaults, optional sample project (§3.8).
+1. **Home / Projects list** — grid or list of project cards; create/search; archived toggle;
+   "New project" opens the **template gallery** (§3.4.1). Designed empty state for first use.
 2. **Project workspace** — three-pane layout:
    - *Left:* project nav (Conversations, Resources, Artifacts, Settings).
    - *Center:* active view (a conversation thread, a resource preview, or an artifact editor).
@@ -199,15 +334,22 @@ see what a piece of work costs.
 4. **Resources view** — table of resources with type/size/tokens/enabled; add menu (paste /
    file / image / URL); preview pane (image resources show a thumbnail + cached caption).
 5. **Artifact editor** — content editor + live preview (for MD/diagram/table), version
-   history rail, diff mode, export menu, "Edit with Claude" prompt bar.
+   history rail, diff mode, **branded export menu with preview** (§3.4.2), "Edit with Claude"
+   prompt bar, and template/section scaffold when created from a deliverable template.
+5b. **Template gallery** — browse research deliverable templates (§3.4.1) with previews and
+   descriptions; launch a new project or artifact from one.
+5c. **Report composition view** — order artifacts into a single report and export as one
+   branded document (§3.4.1 / §3.4.2).
 6. **Project dashboard** — resource/artifact/conversation counts, last activity, and the
    **consolidated cost panel** (§3.6): total spend with breakdowns by model, by
    conversations-vs-artifacts, and by time window; CSV export.
-7. **Settings** — API key, defaults, storage, appearance, model catalog & pricing, optional
-   per-project budget.
+7. **Settings** — API key (+ test), defaults, storage, appearance/theme, **brand: logo &
+   accent color for exports**, model catalog & pricing, deliverable-template management,
+   optional per-project budget, re-run onboarding, About/version.
 
-Visual language: clean, Claude-Desktop-like; light/dark themes; WPF with a modern control
-library (see §7.1).
+Visual language: clean, professional, corporate navy palette (§3.7); light/dark themes; WPF
+with a modern Fluent control library (see §7.1). Every screen has designed empty, loading, and
+error states.
 
 ---
 
@@ -381,8 +523,8 @@ WPF ViewModel
 ### 7.4 Built-in tool set (fixed, not user-extensible)
 The Agent SDK loop is given a **fixed, curated set of tools** — the same kind Claude Code
 uses for file work — so the model can read, search, and write within the project's sandbox.
-This is *not* a user-extensible tool/MCP marketplace; the set is closed, which keeps
-"reduced capabilities" true while enabling real grounding and artifact authoring.
+This is *not* a user-extensible tool/MCP marketplace; the set is closed and curated, which
+keeps the app safe and focused while enabling complete grounding and artifact authoring.
 
 **File & search tools (scoped to the project sandbox only):**
 - `Glob` — find files by pattern within the project resources/artifacts dirs.
@@ -415,22 +557,57 @@ are logged and visible in the conversation (transparency).
   streams are recoverable (persist on completion, mark interrupted otherwise).
 - **Data safety:** SQLite WAL mode; periodic integrity check; export/backup of a project as
   a zip (db subset + files).
-- **Accessibility:** keyboard-navigable, screen-reader labels on primary controls.
-- **Rate limits (nod to prior product pain):** surface 429s clearly with retry/backoff in
-  the sidecar; show usage/token counts. (Full durable job queue is out of v1 scope.)
+- **Accessibility:** keyboard-navigable, screen-reader labels on primary controls, WCAG-AA
+  contrast in both themes.
+- **Reliability under rate limits (v1 core):** the AI gateway handles HTTP 429 and transient
+  5xx with **automatic exponential backoff + jitter and honoring `retry-after`**, surfacing a
+  clear "retrying…" state with attempt count rather than failing the generation. Streaming
+  that is interrupted is resumable/persisted (§8 reliability). This directly addresses the
+  prior product pain of analysts being rate-limited mid-document. (A *durable multi-machine
+  job queue* remains a future scale item — see §10 — but single-machine resilience is in v1.)
+- **Prompt caching (v1 core):** system prompt (custom instructions) and stable resource
+  context are sent with cache breakpoints so repeated turns/regenerations reuse cached input,
+  cutting latency and cost; cache-read/write tokens are metered (§3.6).
+- **Context-budget management (v1 core):** before send, the app estimates token usage against
+  the model's context window and the configured budget, warns when exceeded, and helps the
+  user deselect resources (§3.2). No silent truncation.
+- **Installer & updates:** signed Windows installer (MSIX or WiX/MSI); app version shown in
+  About; update mechanism (at minimum, in-app "update available" notice).
 
 ---
 
-## 9. Milestones
+## 9. Milestones & release plan
+
+**All of M0–M6 constitute v1.0.** The app is not considered shippable until the full
+source-to-branded-deliverable workflow, professional visual identity, and reliability features
+are complete. Milestones are a build order, not a scope-reduction; nothing an analyst needs to
+produce a client-ready report is deferred past v1.0.
 
 | Milestone | Scope |
 |-----------|-------|
-| **M0 — Skeleton** | WPF shell, MVVM, SQLite schema + migrations, settings + secure key storage, projects CRUD. |
-| **M1 — Resources** | Add/extract text/file/URL resources; **image resources via vision + caption cache**; preview; enable/disable; token estimates; FTS. |
-| **M2 — Q&A** | Sidecar + **built-in file tools (Glob/Grep/Read/Edit/Write), sandboxed**; conversations; model selector; streaming; per-turn metadata + actions; **image attachments in-thread**. |
-| **M3 — Artifacts** | Promote/generate/blank artifacts; versioning; diff; manual + "Edit with Claude". |
-| **M4 — Cost & deliverable** | **Cost tracking: per-turn / per-chat / consolidated per-project + CSV export**; export MD/DOCX/PDF/XLSX; project backup zip; polish. |
-| **M5 — Scale/reliability** | 429 backoff, prompt caching, context-budget warnings, optional budget guardrails. |
+| **M0 — Skeleton** | WPF shell + **design system/theming (§3.7)**, MVVM, SQLite schema + migrations, settings + secure key storage, projects CRUD. |
+| **M1 — Resources** | Add/extract text/file/URL resources; **image resources via vision + caption cache**; preview; enable/disable; token estimates; FTS; context-budget estimation & warnings. |
+| **M2 — Q&A** | Sidecar + **direct-API fallback**; **built-in file tools (Glob/Grep/Read/Edit/Write), sandboxed**; conversations; model selector; streaming; per-turn metadata + actions; **image attachments in-thread**; **429 backoff + prompt caching**. |
+| **M3 — Artifacts & templates** | Promote/generate/blank artifacts; **deliverable templates (§3.4.1)**; versioning; diff; manual + "Edit with Claude"; report composition. |
+| **M4 — Deliverable & cost** | **Branded publication-quality export MD/DOCX/PDF/XLSX (§3.4.2)**; **cost tracking per-turn / per-chat / consolidated per-project + CSV export**; project backup/restore zip. |
+| **M5 — Onboarding & polish** | **First-run onboarding + sample project (§3.8)**; empty/loading/error states; accessibility pass; command palette & shortcuts; About screen. |
+| **M6 — Package & release** | Signed installer (MSIX/MSI), app icon/branding, update notice, docs; **v1.0 acceptance (§9.1)**. |
+
+### 9.1 v1.0 acceptance criteria (the quality bar)
+v1.0 ships only when a new user can, on a clean Windows 11 machine:
+
+1. Install via a signed installer and launch to a branded first-run onboarding.
+2. Enter and validate an API key; create a research project from a deliverable template.
+3. Add mixed resources (PDF, DOCX, XLSX, URL, image) and see them extracted, previewed, and
+   token-estimated.
+4. Hold a grounded, streaming conversation with model selection and per-turn cost.
+5. Generate a **Market Research Report** artifact from a template, iterate with "Edit with
+   Claude," and compare versions.
+6. Export a **branded, client-ready PDF/DOCX** (cover, TOC, headers) and an XLSX forecast.
+7. See consolidated project cost and export usage CSV.
+8. Experience a rate-limit event and observe automatic retry/backoff without losing work.
+9. Back up and restore a project.
+10. Do all of the above with no crashes, no unstyled/placeholder screens, and no raw errors.
 
 ---
 
@@ -444,6 +621,14 @@ are logged and visible in the conversation (transparency).
 3. **Image resources** — **Resolved:** supported from v1 via Claude's native **vision**
    (no OCR/vision library), with an optional caption cache for search/preview (§3.2.1).
    Scanned-PDF text extraction beyond native handling can still be revisited later.
-4. **Cross-device sync / cloud backup** — **Resolved: deferred** (explicitly out of scope).
+4. **Cross-device sync / cloud backup** — **Resolved: deferred** (out of scope; per-project
+   backup/restore zip covers hand-off in v1).
 5. **Artifact type expansion** — **Resolved: in the roadmap** — HTML preview, richer
    spreadsheets, and slide decks are planned post-v1 additions.
+6. **Durable multi-machine job queue** — post-v1 scale item. v1 delivers single-machine
+   resilience (429 backoff, resumable/persisted streams, prompt caching, §8); a
+   Redis/BullMQ-style durable queue is only warranted if the app grows to multi-machine or
+   unattended batch generation.
+7. **Firm template pack** — post-v1, ship a Meticulous-Research-specific pack of deliverable
+   templates and an export theme matching the firm's exact house style (logo, fonts, section
+   conventions), building on the config-driven template/branding system (§3.4.1, §3.7).
