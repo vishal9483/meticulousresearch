@@ -36,7 +36,7 @@
         <views:SectionView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type sections:DashboardViewModel}">
-        <views:SectionView />
+        <views:DashboardView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type sections:ProjectSettingsViewModel}">
         <views:SectionView />

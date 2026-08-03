@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.ViewModels.Sections;
+using MeticulousResearch.Core.Projects;
 
 namespace MeticulousResearch.App.ViewModels;
 
@@ -19,10 +20,20 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
     private readonly Dictionary<NavigationSection, SectionViewModel> _sections;
 
     /// <summary>
-    /// Builds a workspace for <paramref name="projectId"/>, wiring up the five section
-    /// view-models. All are project-scoped; the Dashboard is selected by default.
+    /// Builds a workspace for <paramref name="projectId"/> without live dashboard figures
+    /// (window-free plumbing / design-time). Delegates to the service-aware constructor.
     /// </summary>
-    public ProjectWorkspaceViewModel(string projectId)
+    public ProjectWorkspaceViewModel(string projectId) : this(projectId, null)
+    {
+    }
+
+    /// <summary>
+    /// Builds a workspace for <paramref name="projectId"/>, wiring up the five section
+    /// view-models. All are project-scoped; the Dashboard is selected by default. When a
+    /// <paramref name="projects"/> service is supplied the Dashboard is populated with live
+    /// counts; otherwise sections render their designed defaults.
+    /// </summary>
+    public ProjectWorkspaceViewModel(string projectId, IProjectService? projects)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
@@ -31,7 +42,7 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
             [NavigationSection.Conversations] = new ConversationsViewModel(projectId),
             [NavigationSection.Resources] = new ResourcesViewModel(projectId),
             [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId),
-            [NavigationSection.Dashboard] = new DashboardViewModel(projectId),
+            [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects),
             [NavigationSection.Settings] = new ProjectSettingsViewModel(projectId),
         };
 
