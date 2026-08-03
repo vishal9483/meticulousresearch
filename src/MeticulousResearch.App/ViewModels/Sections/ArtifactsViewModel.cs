@@ -5,6 +5,7 @@ using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
 using MeticulousResearch.Core.Data.Entities;
+using MeticulousResearch.Core.Export;
 using MeticulousResearch.Core.Models;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
@@ -21,6 +22,7 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     private readonly IArtifactDiffService? _diffService;
     private readonly IEditWithClaudeService? _editService;
     private readonly IModelCatalog? _catalog;
+    private readonly IExportService? _exportService;
 
     /// <summary>Designed empty-state message shown when the project has no artifacts yet.</summary>
     public const string EmptyStateMessage =
@@ -47,12 +49,26 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
         IArtifactDiffService? diffService,
         IEditWithClaudeService? editService,
         IModelCatalog? catalog)
+        : this(projectId, artifacts, diffService, editService, catalog, null) { }
+
+    /// <summary>
+    /// Creates the Artifacts section wired to the artifact domain, diff, edit-with-Claude, model
+    /// catalog, and branded export services (SPEC §3.4, §3.4.2).
+    /// </summary>
+    public ArtifactsViewModel(
+        string projectId,
+        IArtifactService? artifacts,
+        IArtifactDiffService? diffService,
+        IEditWithClaudeService? editService,
+        IModelCatalog? catalog,
+        IExportService? exportService)
         : base(projectId)
     {
         _artifacts = artifacts;
         _diffService = diffService;
         _editService = editService;
         _catalog = catalog;
+        _exportService = exportService;
         Artifacts = new ObservableCollection<ArtifactRowViewModel>();
         Artifacts.CollectionChanged += (_, _) =>
         {
@@ -92,6 +108,7 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
             {
                 BuildDiff();
                 BuildEditBar();
+                BuildExportBar();
             }
         }
     }
@@ -117,6 +134,42 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
         }
 
         EditWithClaude = new EditWithClaudeViewModel(_selectedArtifact.Id, _editService, _catalog);
+    }
+
+    private BrandedExportViewModel? _export;
+
+    /// <summary>
+    /// The branded export menu for the selected artifact (SPEC §3.4.2, §9.1(6)), or null when no
+    /// artifact is selected or the artifact/export service is unavailable.
+    /// </summary>
+    public BrandedExportViewModel? Export
+    {
+        get => _export;
+        private set => SetProperty(ref _export, value);
+    }
+
+    private void BuildExportBar()
+    {
+        if (_artifacts is null || _exportService is null || _selectedArtifact is null)
+        {
+            Export = null;
+            return;
+        }
+
+        var artifact = _artifacts.Get(_selectedArtifact.Id);
+        if (artifact is null)
+        {
+            Export = null;
+            return;
+        }
+
+        var current = _artifacts.GetHistory(artifact.Id)
+            .FirstOrDefault(v => v.Id == artifact.CurrentVersionId);
+        var content = current?.Content ?? "";
+        var source = ExportSource.FromArtifact(
+            new ExportArtifact(artifact.Title, artifact.Type, content),
+            project: ProjectId);
+        Export = new BrandedExportViewModel(source, _exportService, BrandSettings.Unset);
     }
 
     private ArtifactDiffViewModel? _diff;
