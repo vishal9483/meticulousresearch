@@ -72,8 +72,16 @@ public sealed class ResourceRowViewModel : System.ComponentModel.INotifyProperty
                 return;
             _tokenEstimate = value;
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(TokenEstimate)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(TokenEstimateLabel)));
         }
     }
+
+    /// <summary>
+    /// The token estimate surfaced with an explicit "estimated" marker (SPEC §3.6): this is a local
+    /// pre-send estimate, never an authoritative API usage count. Every displayed estimate carries
+    /// this label so it is not mistaken for a real count.
+    /// </summary>
+    public string TokenEstimateLabel => $"{_tokenEstimate} (estimated)";
 
     /// <summary>
     /// Whether the resource is included when building generation context. Setting it raises
