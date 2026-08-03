@@ -20,6 +20,11 @@
         <views:ThemeGalleryView />
     </DataTemplate>
 
+    <!-- App-level Settings screen (secure key, endpoint, preferences, data directory). -->
+    <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+        <views:SettingsView />
+    </DataTemplate>
+
     <!-- All project sections share the designed SectionView until later features specialize them. -->
     <DataTemplate DataType="{x:Type sections:ConversationsViewModel}">
         <views:SectionView />

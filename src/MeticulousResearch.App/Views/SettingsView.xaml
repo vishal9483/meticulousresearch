@@ -1,0 +1,66 @@
+<UserControl x:Class="MeticulousResearch.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+             d:DataContext="{d:DesignInstance vm:SettingsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <!-- App-level Settings: secure API key, endpoint, preferences and data directory
+         (settings-secure-key/phase.md). Scrollable so nothing is clipped when narrow. -->
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" x:Name="AppSettingsRoot" AutomationProperties.AutomationId="AppSettingsRoot">
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
+
+            <!-- API key -->
+            <TextBlock Text="API key" Margin="0,20,0,4" FontWeight="SemiBold" />
+            <PasswordBox x:Name="ApiKeyBox" AutomationProperties.AutomationId="ApiKeyInput" Width="360" HorizontalAlignment="Left" />
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <Button Content="Save key" Command="{Binding SaveKeyCommand}"
+                        AutomationProperties.AutomationId="SaveKeyButton" />
+                <Button Content="Test key" Command="{Binding TestKeyCommand}" Margin="8,0,0,0"
+                        AutomationProperties.AutomationId="TestKeyButton" />
+                <Button Content="Clear key" Command="{Binding ClearKeyCommand}" Margin="8,0,0,0"
+                        AutomationProperties.AutomationId="ClearKeyButton" />
+            </StackPanel>
+            <TextBlock Text="{Binding TestStatusMessage}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="TestStatusMessage" />
+
+            <!-- API base URL -->
+            <TextBlock Text="API base URL" Margin="0,20,0,4" FontWeight="SemiBold" />
+            <TextBox Text="{Binding BaseUrl, UpdateSourceTrigger=PropertyChanged}" Width="360" HorizontalAlignment="Left"
+                     IsReadOnly="{Binding IsBaseUrlEnvironmentProvided}"
+                     AutomationProperties.AutomationId="BaseUrlInput" />
+            <TextBlock Text="Set by the ANTHROPIC_BASE_URL environment variable."
+                       Foreground="#777" Margin="0,4,0,0"
+                       Visibility="{Binding IsBaseUrlEnvironmentProvided, Converter={StaticResource BooleanToVisibilityConverter}}"
+                       AutomationProperties.AutomationId="BaseUrlEnvIndicator" />
+            <Button Content="Save base URL" Command="{Binding SaveBaseUrlCommand}" Margin="0,8,0,0"
+                    HorizontalAlignment="Left" AutomationProperties.AutomationId="SaveBaseUrlButton" />
+
+            <!-- Preferences -->
+            <TextBlock Text="Default model" Margin="0,20,0,4" FontWeight="SemiBold" />
+            <TextBox Text="{Binding DefaultModel, UpdateSourceTrigger=PropertyChanged}" Width="240" HorizontalAlignment="Left"
+                     AutomationProperties.AutomationId="DefaultModelInput" />
+
+            <TextBlock Text="Context budget (tokens)" Margin="0,20,0,4" FontWeight="SemiBold" />
+            <TextBox Text="{Binding ContextBudget, UpdateSourceTrigger=PropertyChanged}" Width="240" HorizontalAlignment="Left"
+                     AutomationProperties.AutomationId="ContextBudgetInput" />
+
+            <CheckBox Content="Send anonymous telemetry" IsChecked="{Binding TelemetryEnabled}" Margin="0,20,0,0"
+                      AutomationProperties.AutomationId="TelemetryToggle" />
+
+            <!-- Data directory -->
+            <TextBlock Text="Data directory" Margin="0,20,0,4" FontWeight="SemiBold" />
+            <TextBox Text="{Binding DataDirectory, UpdateSourceTrigger=PropertyChanged}" Width="360" HorizontalAlignment="Left"
+                     AutomationProperties.AutomationId="DataDirectoryInput" />
+            <Button Content="Save data directory" Command="{Binding SaveDataDirectoryCommand}" Margin="0,8,0,0"
+                    HorizontalAlignment="Left" AutomationProperties.AutomationId="SaveDataDirectoryButton" />
+            <TextBlock Text="{Binding DataDirectoryError}" Foreground="#C0392B" Margin="0,4,0,0" TextWrapping="Wrap"
+                       AutomationProperties.AutomationId="DataDirectoryError" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
