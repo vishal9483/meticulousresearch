@@ -1,5 +1,6 @@
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
+using MeticulousResearch.App.Commands;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.Services;
 using MeticulousResearch.App.Theme;
@@ -253,6 +254,18 @@ public static class ServiceConfiguration
         }));
 
         services.AddSingleton<ShellViewModel>();
+
+        // Command palette & keyboard shortcuts (command-palette-shortcuts/phase.md, SPEC §3.5):
+        // the command registry (core commands + jump-to-project) and the palette view-model that
+        // ranks a query and invokes the chosen command. Actions delegate to existing destinations
+        // through the shared navigation service.
+        services.AddSingleton<ICommandActions>(sp =>
+            new ShellCommandActions(sp.GetRequiredService<INavigationService>()));
+        services.AddSingleton<ICommandRegistry>(sp => new CommandRegistry(
+            sp.GetRequiredService<IProjectService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<ICommandActions>()));
+        services.AddTransient<CommandPaletteViewModel>();
 
         // Navigable destinations.
         services.AddTransient<ProjectsHomeViewModel>();
