@@ -109,6 +109,17 @@ public static class ServiceConfiguration
                 sp.GetRequiredService<IResourceService>(),
                 sp.GetRequiredService<IClock>()));
 
+        // Streaming generation (streaming/phase.md, SPEC §3.3/§8): renders replies token-by-token,
+        // adds stop/cancel, and persists interrupted turns (partial text marked interrupted) so
+        // nothing is lost; an interrupted turn is resumable.
+        services.AddSingleton<IStreamingConversationService>(sp =>
+            new StreamingConversationService(
+                sp.GetRequiredService<DataStore>(),
+                sp.GetRequiredService<IChatService>(),
+                sp.GetRequiredService<IProjectService>(),
+                sp.GetRequiredService<IResourceService>(),
+                sp.GetRequiredService<IClock>()));
+
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();
         services.AddSingleton<IThemeStore>(_ => new JsonFileThemeStore(DefaultThemeSettingPath()));

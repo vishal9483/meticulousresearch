@@ -18,6 +18,9 @@ namespace MeticulousResearch.App.ViewModels.Sections;
 public sealed partial class ConversationsViewModel : SectionViewModel
 {
     private readonly IConversationService? _conversations;
+    private readonly IStreamingConversationService? _streaming;
+    private readonly Dictionary<ConversationTurnViewModel, StreamingTurn> _streamingTurns = new();
+    private CancellationTokenSource? _activeCts;
     private string? _conversationId;
 
     /// <summary>
@@ -32,20 +35,24 @@ public sealed partial class ConversationsViewModel : SectionViewModel
     /// Builds the section wired to the conversation service (and app settings for the default
     /// model). When <paramref name="conversations"/> is null the section is design-time only. The
     /// model picker (model-selector) drives which model each turn is sent with and defaults to the
-    /// app/project default model.
+    /// app/project default model. When a <paramref name="streaming"/> service is supplied, replies
+    /// render token-by-token and are stoppable/resumable (SPEC §3.3, §8).
     /// </summary>
     public ConversationsViewModel(
         string projectId,
         IConversationService? conversations,
         ISettingsService? settings,
-        IModelCatalog? catalog = null)
+        IModelCatalog? catalog = null,
+        IStreamingConversationService? streaming = null)
         : base(projectId)
     {
         _conversations = conversations;
+        _streaming = streaming;
         var initialModel = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
         ModelPicker = new ModelPickerViewModel(catalog ?? ModelCatalogLoader.Default, initialModel);
         Turns = new ReadOnlyObservableCollection<ConversationTurnViewModel>(_turns);
     }
+
 
     /// <summary>The tiered model picker (model-selector) that selects the model for turns in this thread.</summary>
     public ModelPickerViewModel ModelPicker { get; }
@@ -70,13 +77,21 @@ public sealed partial class ConversationsViewModel : SectionViewModel
     [ObservableProperty]
     private string _draft = "";
 
-    /// <summary>Whether a turn is currently in flight (a stop/streaming hook for later features).</summary>
+    /// <summary>Whether a turn is currently in flight (drives the Stop control and disables Send).</summary>
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(StopCommand))]
     private bool _isBusy;
 
+    /// <summary>Whether a stoppable streaming generation is in progress (drives the Stop control's visibility).</summary>
+    public bool IsStreaming => IsBusy && _activeCts is not null;
+
+    partial void OnIsBusyChanged(bool value) => OnPropertyChanged(nameof(IsStreaming));
+
     /// <summary>
-    /// Sends the composed message: appends the user turn, drives generation through the
-    /// conversation service, and appends the assistant reply below it. Ignores blank input.
+    /// Sends the composed message: appends the user turn, drives generation, and renders the
+    /// assistant reply. When a streaming service is wired the reply renders token-by-token into a
+    /// live assistant turn that can be stopped mid-stream (SPEC §3.3); otherwise the whole reply is
+    /// appended on completion. Ignores blank input.
     /// </summary>
     [RelayCommand]
     private async Task Send()
@@ -87,6 +102,12 @@ public sealed partial class ConversationsViewModel : SectionViewModel
 
         Draft = "";
         AppendTurn("user", text);
+
+        if (_streaming is not null && _conversations is not null)
+        {
+            await StreamReply(text).ConfigureAwait(true);
+            return;
+        }
 
         if (_conversations is null)
             return; // Design-time: no backend wired.
@@ -101,6 +122,73 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         }
         finally
         {
+            IsBusy = false;
+        }
+    }
+
+    private async Task StreamReply(string userMessage)
+    {
+        _conversationId ??= _conversations!.Create(ProjectId).Id;
+        var model = ModelPicker.ResolveForTurn();
+
+        var live = new ConversationTurnViewModel("assistant", "", model, ResumeTurn) { IsStreaming = true };
+        _turns.Add(live);
+        OnPropertyChanged(nameof(IsEmpty));
+
+        using var cts = new CancellationTokenSource();
+        _activeCts = cts;
+        IsBusy = true;
+        try
+        {
+            var turn = await _streaming!.StreamAsk(
+                _conversationId,
+                userMessage,
+                model,
+                onDelta: t => live.Content = t.Text,
+                cancellationToken: cts.Token).ConfigureAwait(true);
+
+            _streamingTurns[live] = turn;
+            live.Content = turn.Text;
+            live.IsStreaming = false;
+            live.WasInterrupted = turn.IsInterrupted;
+        }
+        finally
+        {
+            _activeCts = null;
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Stops the in-progress generation (SPEC §3.5 Esc/Stop): cancels delivery immediately.</summary>
+    [RelayCommand(CanExecute = nameof(CanStop))]
+    private void Stop() => _activeCts?.Cancel();
+
+    private bool CanStop() => IsBusy && _activeCts is not null;
+
+    private async Task ResumeTurn(ConversationTurnViewModel live)
+    {
+        if (_streaming is null || !_streamingTurns.TryGetValue(live, out var turn))
+            return;
+
+        using var cts = new CancellationTokenSource();
+        _activeCts = cts;
+        live.IsStreaming = true;
+        live.WasInterrupted = false;
+        IsBusy = true;
+        try
+        {
+            var resumed = await _streaming.Resume(
+                turn,
+                onDelta: t => live.Content = t.Text,
+                cancellationToken: cts.Token).ConfigureAwait(true);
+
+            live.Content = resumed.Text;
+            live.IsStreaming = false;
+            live.WasInterrupted = resumed.IsInterrupted;
+        }
+        finally
+        {
+            _activeCts = null;
             IsBusy = false;
         }
     }

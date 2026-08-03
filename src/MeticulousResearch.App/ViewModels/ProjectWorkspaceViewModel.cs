@@ -42,13 +42,14 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
         IProjectService? projects,
         IConversationService? conversations = null,
         ISettingsService? settings = null,
-        IModelCatalog? catalog = null)
+        IModelCatalog? catalog = null,
+        IStreamingConversationService? streaming = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
-            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog),
+            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog, streaming),
             [NavigationSection.Resources] = new ResourcesViewModel(projectId),
             [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId),
             [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects),
