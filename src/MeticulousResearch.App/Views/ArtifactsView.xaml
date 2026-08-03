@@ -19,6 +19,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
@@ -55,10 +56,39 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
+        <!-- Edit with Claude prompt bar (SPEC §3.4, §9.1(5)): appears when an artifact is selected.
+             A follow-up instruction input, a per-edit model selector, a streaming preview, and a
+             commit/keep action. Errors surface inline; a successful edit commits a new version. -->
+        <Border Grid.Row="3" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
+                AutomationProperties.AutomationId="EditWithClaudeBar"
+                Visibility="{Binding EditWithClaude, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+            <StackPanel DataContext="{Binding EditWithClaude}">
+                <TextBlock Text="Edit with Claude" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <TextBox Width="360"
+                             AutomationProperties.AutomationId="EditWithClaudeInstruction"
+                             Text="{Binding Instruction, UpdateSourceTrigger=PropertyChanged}" />
+                    <ComboBox Width="200" Margin="8,0,0,0"
+                              AutomationProperties.AutomationId="EditWithClaudeModelPicker"
+                              ItemsSource="{Binding ModelPicker.Tiers}"
+                              DisplayMemberPath="Name" />
+                    <Button Content="Edit" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="EditWithClaudeButton"
+                            Command="{Binding EditCommand}" />
+                </StackPanel>
+                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="EditWithClaudePreview"
+                           Text="{Binding PreviewContent}" />
+                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#C00"
+                           AutomationProperties.AutomationId="EditWithClaudeError"
+                           Text="{Binding ErrorMessage}" />
+            </StackPanel>
+        </Border>
+
         <!-- Diff mode (SPEC §3.4): appears when an artifact is selected. Two version pickers,
              side-by-side / inline toggle, highlighted changes, and a disabled hint when only one
              version exists. -->
-        <Border Grid.Row="3" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
+        <Border Grid.Row="4" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
                 AutomationProperties.AutomationId="ArtifactDiffPanel"
                 Visibility="{Binding Diff, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
             <StackPanel DataContext="{Binding Diff}">

@@ -5,6 +5,7 @@ using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
 using MeticulousResearch.Core.Data.Entities;
+using MeticulousResearch.Core.Models;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
@@ -18,6 +19,8 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
 {
     private readonly IArtifactService? _artifacts;
     private readonly IArtifactDiffService? _diffService;
+    private readonly IEditWithClaudeService? _editService;
+    private readonly IModelCatalog? _catalog;
 
     /// <summary>Designed empty-state message shown when the project has no artifacts yet.</summary>
     public const string EmptyStateMessage =
@@ -32,10 +35,24 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
 
     /// <summary>Creates the Artifacts section wired to the artifact domain and diff services.</summary>
     public ArtifactsViewModel(string projectId, IArtifactService? artifacts, IArtifactDiffService? diffService)
+        : this(projectId, artifacts, diffService, null, null) { }
+
+    /// <summary>
+    /// Creates the Artifacts section wired to the artifact domain, diff, and edit-with-Claude
+    /// services plus the model catalog backing the per-edit model selector (SPEC §3.4).
+    /// </summary>
+    public ArtifactsViewModel(
+        string projectId,
+        IArtifactService? artifacts,
+        IArtifactDiffService? diffService,
+        IEditWithClaudeService? editService,
+        IModelCatalog? catalog)
         : base(projectId)
     {
         _artifacts = artifacts;
         _diffService = diffService;
+        _editService = editService;
+        _catalog = catalog;
         Artifacts = new ObservableCollection<ArtifactRowViewModel>();
         Artifacts.CollectionChanged += (_, _) =>
         {
@@ -72,8 +89,34 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
         set
         {
             if (SetProperty(ref _selectedArtifact, value))
+            {
                 BuildDiff();
+                BuildEditBar();
+            }
         }
+    }
+
+    private EditWithClaudeViewModel? _editWithClaude;
+
+    /// <summary>
+    /// The "Edit with Claude" prompt bar for the selected artifact (SPEC §3.4, §9.1(5)), or null when
+    /// no artifact is selected or the edit service/catalog is unavailable.
+    /// </summary>
+    public EditWithClaudeViewModel? EditWithClaude
+    {
+        get => _editWithClaude;
+        private set => SetProperty(ref _editWithClaude, value);
+    }
+
+    private void BuildEditBar()
+    {
+        if (_editService is null || _catalog is null || _selectedArtifact is null)
+        {
+            EditWithClaude = null;
+            return;
+        }
+
+        EditWithClaude = new EditWithClaudeViewModel(_selectedArtifact.Id, _editService, _catalog);
     }
 
     private ArtifactDiffViewModel? _diff;
