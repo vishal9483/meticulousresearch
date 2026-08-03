@@ -2,9 +2,11 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.App.Services;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Settings;
+using MeticulousResearch.Core.Turns;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
@@ -19,6 +21,9 @@ public sealed partial class ConversationsViewModel : SectionViewModel
 {
     private readonly IConversationService? _conversations;
     private readonly IStreamingConversationService? _streaming;
+    private readonly ITurnActionService? _turnActions;
+    private readonly ITurnCostCalculator? _costCalculator;
+    private readonly IClipboardService? _clipboard;
     private readonly Dictionary<ConversationTurnViewModel, StreamingTurn> _streamingTurns = new();
     private CancellationTokenSource? _activeCts;
     private string? _conversationId;
@@ -36,18 +41,26 @@ public sealed partial class ConversationsViewModel : SectionViewModel
     /// model). When <paramref name="conversations"/> is null the section is design-time only. The
     /// model picker (model-selector) drives which model each turn is sent with and defaults to the
     /// app/project default model. When a <paramref name="streaming"/> service is supplied, replies
-    /// render token-by-token and are stoppable/resumable (SPEC §3.3, §8).
+    /// render token-by-token and are stoppable/resumable (SPEC §3.3, §8). When the turn-action
+    /// collaborators are supplied, each completed assistant turn exposes its metadata, a per-turn
+    /// cost badge, and the turn actions (turn-metadata-actions, SPEC §3.3, §3.6).
     /// </summary>
     public ConversationsViewModel(
         string projectId,
         IConversationService? conversations,
         ISettingsService? settings,
         IModelCatalog? catalog = null,
-        IStreamingConversationService? streaming = null)
+        IStreamingConversationService? streaming = null,
+        ITurnActionService? turnActions = null,
+        ITurnCostCalculator? costCalculator = null,
+        IClipboardService? clipboard = null)
         : base(projectId)
     {
         _conversations = conversations;
         _streaming = streaming;
+        _turnActions = turnActions;
+        _costCalculator = costCalculator;
+        _clipboard = clipboard;
         var initialModel = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
         ModelPicker = new ModelPickerViewModel(catalog ?? ModelCatalogLoader.Default, initialModel);
         Turns = new ReadOnlyObservableCollection<ConversationTurnViewModel>(_turns);
@@ -118,7 +131,13 @@ public sealed partial class ConversationsViewModel : SectionViewModel
             _conversationId ??= _conversations.Create(ProjectId).Id;
             var model = ModelPicker.ResolveForTurn();
             var assistant = await _conversations.Ask(_conversationId, text, model).ConfigureAwait(true);
-            AppendTurn("assistant", assistant.Content, assistant.Model);
+            var turnVm = new ConversationTurnViewModel("assistant", assistant.Content, assistant.Model)
+            {
+                MessageId = assistant.Id,
+            };
+            _turns.Add(turnVm);
+            OnPropertyChanged(nameof(IsEmpty));
+            AttachActions(turnVm);
         }
         finally
         {
@@ -151,6 +170,9 @@ public sealed partial class ConversationsViewModel : SectionViewModel
             live.Content = turn.Text;
             live.IsStreaming = false;
             live.WasInterrupted = turn.IsInterrupted;
+            live.MessageId = turn.PersistedMessageId;
+            if (!turn.IsInterrupted)
+                AttachActions(live);
         }
         finally
         {
@@ -196,6 +218,91 @@ public sealed partial class ConversationsViewModel : SectionViewModel
     private void AppendTurn(string role, string content, string? model = null)
     {
         _turns.Add(new ConversationTurnViewModel(role, content, model));
+        OnPropertyChanged(nameof(IsEmpty));
+    }
+
+    /// <summary>
+    /// The most recently built promote-to-artifact request (turn-metadata-actions). The artifact
+    /// domain is owned by <c>artifact-creation</c> (M3); until it is wired, promoting a turn records
+    /// the request here so the provenance-carrying payload is observable.
+    /// </summary>
+    public PromoteToArtifactRequest? LastPromoteRequest { get; private set; }
+
+    /// <summary>
+    /// Attaches the metadata/cost/action affordances to a completed assistant turn when the
+    /// turn-action collaborators are wired and the turn has a persisted message id.
+    /// </summary>
+    private void AttachActions(ConversationTurnViewModel turn)
+    {
+        if (_turnActions is null || _costCalculator is null || _clipboard is null)
+            return;
+        if (string.IsNullOrEmpty(turn.MessageId))
+            return;
+
+        var messageId = turn.MessageId!;
+        var metadata = _turnActions.GetMetadata(messageId);
+
+        turn.Actions = new TurnActionsViewModel(
+            turn.Content,
+            metadata,
+            _costCalculator,
+            _clipboard,
+            retry: modelOverride => RetryTurn(messageId, modelOverride),
+            editResend: newText => EditAndResendTurn(messageId, newText),
+            buildPromoteRequest: () => _turnActions.BuildPromoteRequest(messageId),
+            promote: request =>
+            {
+                LastPromoteRequest = request;
+                return Task.CompletedTask;
+            },
+            delete: () => DeleteTurn(turn, messageId));
+    }
+
+    private async Task RetryTurn(string messageId, string? modelOverride)
+    {
+        if (_turnActions is null || _conversationId is null)
+            return;
+        await _turnActions.Retry(messageId, modelOverride).ConfigureAwait(true);
+        RebuildFromPersisted();
+    }
+
+    private async Task EditAndResendTurn(string messageId, string newText)
+    {
+        if (_turnActions is null || _conversationId is null)
+            return;
+        await _turnActions.EditAndResend(messageId, newText).ConfigureAwait(true);
+        RebuildFromPersisted();
+    }
+
+    private Task DeleteTurn(ConversationTurnViewModel turn, string messageId)
+    {
+        if (_turnActions is null)
+            return Task.CompletedTask;
+        _turnActions.Delete(messageId);
+        _turns.Remove(turn);
+        OnPropertyChanged(nameof(IsEmpty));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Rebuilds the rendered thread from the persisted messages, re-attaching turn actions.</summary>
+    private void RebuildFromPersisted()
+    {
+        if (_conversations is null || _conversationId is null)
+            return;
+
+        _turns.Clear();
+        _streamingTurns.Clear();
+        foreach (var message in _conversations.GetMessages(_conversationId))
+        {
+            var turn = new ConversationTurnViewModel(message.Role, message.Content, message.Model)
+            {
+                MessageId = message.Id,
+            };
+            _turns.Add(turn);
+            if (turn.IsAssistant)
+                AttachActions(turn);
+        }
+
         OnPropertyChanged(nameof(IsEmpty));
     }
 }

@@ -34,6 +34,24 @@ public sealed partial class ConversationTurnViewModel : ObservableObject
     /// <summary>The model id that produced this (assistant) turn, or <c>null</c> for user turns / unknown.</summary>
     public string? Model { get; }
 
+    /// <summary>
+    /// The id of the persisted <c>Message</c> row backing this turn, once known. Turn actions
+    /// (retry/edit/promote/delete, turn-metadata-actions) operate on this id.
+    /// </summary>
+    public string? MessageId { get; internal set; }
+
+    /// <summary>
+    /// The per-turn metadata, cost badge, and actions for a completed assistant turn
+    /// (turn-metadata-actions), or <c>null</c> until attached / for user turns. Set once the turn's
+    /// persisted metadata is known so the view can bind the badge and action menu.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActions))]
+    private TurnActionsViewModel? _actions;
+
+    /// <summary>Whether this turn exposes the metadata/cost/action affordances.</summary>
+    public bool HasActions => Actions is not null;
+
     /// <summary>Whether a model label should be shown for this turn (assistant turns with a recorded model).</summary>
     public bool HasModel => IsAssistant && !string.IsNullOrWhiteSpace(Model);
 

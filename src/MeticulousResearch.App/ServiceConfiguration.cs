@@ -1,6 +1,7 @@
 using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.App.Services;
 using MeticulousResearch.App.Theme;
 using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
@@ -19,6 +20,7 @@ using MeticulousResearch.Core.Security;
 using MeticulousResearch.Core.Settings;
 using MeticulousResearch.Core.Theming;
 using MeticulousResearch.Core.Time;
+using MeticulousResearch.Core.Turns;
 
 namespace MeticulousResearch.App;
 
@@ -119,6 +121,19 @@ public static class ServiceConfiguration
                 sp.GetRequiredService<IProjectService>(),
                 sp.GetRequiredService<IResourceService>(),
                 sp.GetRequiredService<IClock>()));
+
+        // Per-turn metadata, cost badge, and actions (turn-metadata-actions/phase.md, SPEC §3.3/§3.6):
+        // retry (same/other model), edit-and-resend, promote-to-artifact (request/provenance; artifact
+        // domain is M3), and delete, plus an inline cost badge priced through the ITurnCostCalculator
+        // seam (authoritative engine is cost-tracking, M4).
+        services.AddSingleton<ITurnCostCalculator>(sp =>
+            new CatalogTurnCostCalculator(sp.GetRequiredService<IModelCatalog>()));
+        services.AddSingleton<ITurnActionService>(sp =>
+            new TurnActionService(
+                sp.GetRequiredService<DataStore>(),
+                sp.GetRequiredService<IConversationService>(),
+                sp.GetRequiredService<IResourceService>()));
+        services.AddSingleton<IClipboardService, WpfClipboardService>();
 
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();

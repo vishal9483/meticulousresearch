@@ -140,6 +140,82 @@
                                                AutomationProperties.Name="{Binding ModelLabel}"
                                                Text="{Binding ModelLabel}"
                                                Visibility="{Binding HasModel, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                    <!-- Per-turn metadata, cost badge, and actions (turn-metadata-actions,
+                                         SPEC §3.3, §3.6): an inline cost badge with an expandable full
+                                         breakdown, an expandable metadata panel (model/tokens/latency/
+                                         resource scope), and an action menu (copy, retry same/other model,
+                                         edit & resend, promote to artifact, delete). Shown once the turn's
+                                         persisted metadata is attached. -->
+                                    <StackPanel x:Name="TurnActions" Margin="0,8,0,0"
+                                                AutomationProperties.AutomationId="TurnActions"
+                                                DataContext="{Binding Actions}"
+                                                Visibility="{Binding DataContext.HasActions,
+                                                    RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Border},
+                                                    Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <!-- Inline cost badge with a full breakdown on expand (§3.6). -->
+                                        <Expander x:Name="CostBadge" Header="{Binding CostBadge}"
+                                                  AutomationProperties.AutomationId="CostBadge"
+                                                  AutomationProperties.Name="{Binding CostBadge}">
+                                            <TextBlock x:Name="CostBreakdown" FontSize="12" Foreground="#666"
+                                                       AutomationProperties.AutomationId="CostBreakdown"
+                                                       Text="{Binding CostBreakdownDetail}" TextWrapping="Wrap" />
+                                        </Expander>
+
+                                        <!-- Expandable per-turn metadata panel (§3.3). -->
+                                        <Expander x:Name="TurnMetadata" Header="Details" Margin="0,4,0,0"
+                                                  AutomationProperties.AutomationId="TurnMetadata"
+                                                  AutomationProperties.Name="Details">
+                                            <StackPanel>
+                                                <TextBlock AutomationProperties.AutomationId="MetadataModel"
+                                                           FontSize="12" Foreground="#666"
+                                                           Text="{Binding ModelLabel, StringFormat='Model: {0}'}" />
+                                                <TextBlock AutomationProperties.AutomationId="MetadataInputTokens"
+                                                           FontSize="12" Foreground="#666"
+                                                           Text="{Binding InputTokens, StringFormat='Input tokens: {0}'}" />
+                                                <TextBlock AutomationProperties.AutomationId="MetadataOutputTokens"
+                                                           FontSize="12" Foreground="#666"
+                                                           Text="{Binding OutputTokens, StringFormat='Output tokens: {0}'}" />
+                                                <TextBlock AutomationProperties.AutomationId="MetadataLatency"
+                                                           FontSize="12" Foreground="#666"
+                                                           Text="{Binding LatencyLabel, StringFormat='Latency: {0}'}" />
+                                                <TextBlock AutomationProperties.AutomationId="MetadataResourceScope"
+                                                           FontSize="12" Foreground="#666" TextWrapping="Wrap"
+                                                           Text="{Binding ResourceScopeLabel, StringFormat='Resources: {0}'}" />
+                                            </StackPanel>
+                                        </Expander>
+
+                                        <!-- Action menu (§3.3). -->
+                                        <Menu x:Name="TurnActionMenu" Margin="0,4,0,0" Background="Transparent"
+                                              AutomationProperties.AutomationId="TurnActionMenu">
+                                            <MenuItem Header="Actions" AutomationProperties.Name="Actions">
+                                                <MenuItem Header="Copy"
+                                                          AutomationProperties.AutomationId="CopyAction"
+                                                          AutomationProperties.Name="Copy"
+                                                          Command="{Binding CopyCommand}" />
+                                                <MenuItem Header="Retry"
+                                                          AutomationProperties.AutomationId="RetryAction"
+                                                          AutomationProperties.Name="Retry"
+                                                          Command="{Binding RetryCommand}" />
+                                                <MenuItem Header="Retry with other model"
+                                                          AutomationProperties.AutomationId="RetryOtherModelAction"
+                                                          AutomationProperties.Name="Retry with other model"
+                                                          Command="{Binding RetryWithOtherModelCommand}" />
+                                                <MenuItem Header="Edit &amp; resend"
+                                                          AutomationProperties.AutomationId="EditResendAction"
+                                                          AutomationProperties.Name="Edit &amp; resend"
+                                                          Command="{Binding EditAndResendCommand}" />
+                                                <MenuItem Header="Promote to artifact"
+                                                          AutomationProperties.AutomationId="PromoteAction"
+                                                          AutomationProperties.Name="Promote to artifact"
+                                                          Command="{Binding PromoteCommand}" />
+                                                <MenuItem Header="Delete"
+                                                          AutomationProperties.AutomationId="DeleteAction"
+                                                          AutomationProperties.Name="Delete"
+                                                          Command="{Binding DeleteCommand}" />
+                                            </MenuItem>
+                                        </Menu>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                         </DataTemplate>
