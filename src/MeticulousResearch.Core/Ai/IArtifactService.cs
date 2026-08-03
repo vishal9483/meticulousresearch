@@ -63,6 +63,89 @@ public interface IArtifactService
     /// <exception cref="InvalidOperationException">The artifact does not exist.</exception>
     ArtifactVersion SetContent(string artifactId, string content);
 
+    /// <summary>
+    /// The single entry point for every change to an artifact (SPEC §3.4): assigns the next
+    /// per-artifact <c>version_no</c>, writes the new version immutably with the supplied
+    /// <paramref name="provenance"/>, and repoints <c>current_version_id</c> at it — all under one
+    /// transaction so ordering is race-free. Saved versions are never mutated in place.
+    /// </summary>
+    /// <param name="artifactId">The artifact to append a version to.</param>
+    /// <param name="content">The new version's content.</param>
+    /// <param name="provenance">Who produced the version and (for generated versions) its usage.</param>
+    /// <returns>The newly-created, now-current version.</returns>
+    /// <exception cref="InvalidOperationException">The artifact does not exist.</exception>
+    ArtifactVersion AddVersion(string artifactId, string content, ArtifactProvenance provenance);
+
+    /// <summary>
+    /// Rejects any attempt to overwrite a saved version's content in place (SPEC §3.4 immutability):
+    /// versions are append-only, so every change must funnel through <see cref="AddVersion"/>. Always
+    /// throws — there is no in-place mutation path.
+    /// </summary>
+    /// <param name="versionId">The version an overwrite was attempted against.</param>
+    /// <param name="content">The rejected replacement content.</param>
+    /// <exception cref="NotSupportedException">Always — saved versions are immutable.</exception>
+    void OverwriteVersionContent(string versionId, string content);
+
+    /// <summary>
+    /// Regenerates the artifact through <see cref="IChatService"/> from <paramref name="request"/>,
+    /// recording the emitted content as a new version whose provenance carries the model, prompt,
+    /// in-scope resource ids, token usage, and priced cost (created_by <c>claude</c>) (SPEC §3.4).
+    /// </summary>
+    /// <exception cref="ArtifactValidationException">The prompt or model is empty.</exception>
+    /// <exception cref="InvalidOperationException">The artifact does not exist or generation produced no completion.</exception>
+    Task<ArtifactVersion> Regenerate(
+        string artifactId, GenerateArtifactRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns an artifact's full version history ordered newest-first for display (SPEC §3.4),
+    /// tie-breaking on <c>version_no</c> so rapid successive versions still order deterministically.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The artifact does not exist.</exception>
+    IReadOnlyList<ArtifactVersion> GetHistory(string artifactId);
+
+    /// <summary>
+    /// Repoints the artifact's <c>current_version_id</c> at <paramref name="versionId"/> without
+    /// creating a new version (SPEC §3.4 set-current).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The artifact or version does not exist, or the version belongs to another artifact.</exception>
+    Artifact SetCurrentVersion(string artifactId, string versionId);
+
+    /// <summary>
+    /// Reverts to <paramref name="versionId"/> by creating a <em>new</em> user-authored version that
+    /// copies that version's content and making it current (SPEC §3.4 revert). History stays
+    /// append-only — earlier versions are never rewritten.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The artifact or version does not exist, or the version belongs to another artifact.</exception>
+    ArtifactVersion RevertTo(string artifactId, string versionId);
+
+    /// <summary>
+    /// Duplicates an artifact under <paramref name="newTitle"/>, deep-copying its full version
+    /// history (preserving order and provenance) into a fully-independent new artifact whose current
+    /// version matches the source's current version (SPEC §3.4 duplicate).
+    /// </summary>
+    /// <exception cref="ArtifactValidationException">The new title is empty.</exception>
+    /// <exception cref="InvalidOperationException">The source artifact does not exist.</exception>
+    Artifact DuplicateArtifact(string artifactId, string newTitle);
+
+    /// <summary>Deletes an artifact and all of its versions (SPEC §3.4 delete). Missing is a no-op.</summary>
+    void DeleteArtifact(string artifactId);
+
+    /// <summary>
+    /// Deletes a single non-current version (SPEC §3.4). The current version cannot be deleted — set
+    /// another version current first.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The version does not exist, belongs to another artifact, or is the current version.</exception>
+    void DeleteVersion(string artifactId, string versionId);
+
+    /// <summary>
+    /// Promotes an artifact into an <c>artifact_ref</c> resource in <paramref name="targetProjectId"/>
+    /// whose extracted text is the artifact's current version content, so it is FTS-indexed and
+    /// grounding-eligible (SPEC §3.2, §3.4). The resource is created disabled; enable it to include it
+    /// in generation scope.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The artifact does not exist.</exception>
+    Resource PromoteToResource(string artifactId, string targetProjectId);
+
     /// <summary>Returns the artifact with <paramref name="artifactId"/>, or null when none exists.</summary>
     Artifact? Get(string artifactId);
 

@@ -112,7 +112,8 @@ public static class ServiceConfiguration
         services.AddSingleton<IArtifactService>(sp => new ArtifactService(
             sp.GetRequiredService<DataStore>(),
             sp.GetRequiredService<IChatService>(),
-            sp.GetRequiredService<IClock>()));
+            sp.GetRequiredService<IClock>(),
+            new CatalogTurnCostCalculator(sp.GetRequiredService<IModelCatalog>())));
 
         // Deliverable-template catalog + service (deliverable-templates/phase.md, SPEC §3.4.1):
         // config-driven research templates (shipped default merged with a Settings override JSON)
