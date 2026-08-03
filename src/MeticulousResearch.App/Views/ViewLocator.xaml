@@ -30,7 +30,7 @@
         <views:SectionView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type sections:ResourcesViewModel}">
-        <views:SectionView />
+        <views:ResourcesView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type sections:ArtifactsViewModel}">
         <views:SectionView />

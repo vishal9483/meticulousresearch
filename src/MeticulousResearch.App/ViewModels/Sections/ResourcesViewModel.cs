@@ -1,15 +1,40 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.Core.Resources;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
 /// <summary>
-/// Resources section — the project's source material (text/file/URL/image) that Claude grounds
-/// its answers in (SPEC §3.2). Minimal but designed; real content lands with resource features.
+/// Resources section — the project's source material (text/file/URL/image) that Claude grounds its
+/// answers in (SPEC §3.2). This slice implements the text-paste flow: an "Add resource → Paste
+/// text" entry, a table of resources (title/type/size/tokens/enabled), and a preview pane showing
+/// the selected resource's extracted text. Window-free so the flow is <c>@unit</c>-testable; the
+/// designed empty state renders when a project has no resources.
 /// </summary>
-public sealed class ResourcesViewModel : SectionViewModel
+public sealed partial class ResourcesViewModel : SectionViewModel
 {
-    /// <summary>Creates the Resources section for <paramref name="projectId"/>.</summary>
-    public ResourcesViewModel(string projectId) : base(projectId) { }
+    private readonly IResourceService? _resources;
+
+    /// <summary>Designed empty-state message shown when the project has no resources yet.</summary>
+    public const string EmptyStateMessage = "No resources yet. Add pasted text to ground Claude in your notes.";
+
+    /// <summary>
+    /// Design-time / window-free constructor without a service (renders the designed empty state).
+    /// </summary>
+    public ResourcesViewModel(string projectId) : this(projectId, null) { }
+
+    /// <summary>
+    /// Creates the Resources section for <paramref name="projectId"/>, wired to the resource
+    /// service so pasted text can be added, listed, and previewed. When no service is supplied the
+    /// section renders its designed empty state.
+    /// </summary>
+    public ResourcesViewModel(string projectId, IResourceService? resources) : base(projectId)
+    {
+        _resources = resources;
+        Resources = new ObservableCollection<ResourceRowViewModel>();
+        Load();
+    }
 
     /// <inheritdoc />
     public override NavigationSection Section => NavigationSection.Resources;
@@ -19,4 +44,110 @@ public sealed class ResourcesViewModel : SectionViewModel
 
     /// <summary>Designed one-line description of what this section is for.</summary>
     public string Headline => "Source material Claude grounds its answers in.";
+
+    /// <summary>The resources in this project, most recently added first.</summary>
+    public ObservableCollection<ResourceRowViewModel> Resources { get; }
+
+    /// <summary>Whether the project currently has no resources (drives the empty state).</summary>
+    public bool IsEmpty => Resources.Count == 0;
+
+    private ResourceRowViewModel? _selectedResource;
+
+    /// <summary>The row selected in the table; drives the preview pane.</summary>
+    public ResourceRowViewModel? SelectedResource
+    {
+        get => _selectedResource;
+        set
+        {
+            if (SetProperty(ref _selectedResource, value))
+            {
+                OnPropertyChanged(nameof(PreviewText));
+                OnPropertyChanged(nameof(HasSelection));
+            }
+        }
+    }
+
+    /// <summary>Whether a resource is selected (drives the preview pane's visibility).</summary>
+    public bool HasSelection => _selectedResource is not null;
+
+    /// <summary>The extracted text of the selected resource, shown in the preview pane.</summary>
+    public string PreviewText =>
+        _selectedResource is null || _resources is null
+            ? ""
+            : _resources.GetExtractedText(_selectedResource.Id);
+
+    private string _draftTitle = "";
+
+    /// <summary>The title typed into the "Add resource → Paste text" entry.</summary>
+    public string DraftTitle
+    {
+        get => _draftTitle;
+        set => SetProperty(ref _draftTitle, value);
+    }
+
+    private string _draftText = "";
+
+    /// <summary>The text typed/pasted into the "Add resource → Paste text" entry.</summary>
+    public string DraftText
+    {
+        get => _draftText;
+        set => SetProperty(ref _draftText, value);
+    }
+
+    private string? _validationError;
+
+    /// <summary>Inline validation error surfaced when a paste is rejected; null when valid.</summary>
+    public string? ValidationError
+    {
+        get => _validationError;
+        private set
+        {
+            if (SetProperty(ref _validationError, value))
+                OnPropertyChanged(nameof(HasValidationError));
+        }
+    }
+
+    /// <summary>Whether an inline validation error is currently shown.</summary>
+    public bool HasValidationError => !string.IsNullOrEmpty(_validationError);
+
+    /// <summary>
+    /// Adds a pasted-text resource from <see cref="DraftText"/>/<see cref="DraftTitle"/>. Empty or
+    /// whitespace-only text is rejected with an inline <see cref="ValidationError"/> and no resource
+    /// is created; on success the new row is inserted at the top and selected, and the draft clears.
+    /// </summary>
+    [RelayCommand]
+    public void AddPastedText()
+    {
+        if (string.IsNullOrWhiteSpace(DraftText))
+        {
+            ValidationError = "Enter some text to add as a resource.";
+            return;
+        }
+
+        ValidationError = null;
+
+        if (_resources is null)
+            return;
+
+        var resource = _resources.AddText(ProjectId, DraftTitle, DraftText);
+        var row = new ResourceRowViewModel(resource);
+        Resources.Insert(0, row);
+        OnPropertyChanged(nameof(IsEmpty));
+        SelectedResource = row;
+        DraftTitle = "";
+        DraftText = "";
+    }
+
+    /// <summary>(Re)loads the resource table from the service.</summary>
+    public void Load()
+    {
+        Resources.Clear();
+        if (_resources is not null)
+        {
+            foreach (var r in _resources.List(ProjectId))
+                Resources.Add(new ResourceRowViewModel(r));
+        }
+
+        OnPropertyChanged(nameof(IsEmpty));
+    }
 }

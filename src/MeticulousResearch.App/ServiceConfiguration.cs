@@ -8,6 +8,7 @@ using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
 using MeticulousResearch.Core.Projects;
+using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Security;
 using MeticulousResearch.Core.Settings;
 using MeticulousResearch.Core.Theming;
@@ -41,6 +42,12 @@ public static class ServiceConfiguration
         // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
         services.AddSingleton<IProjectService>(sp =>
             new ProjectService(sp.GetRequiredService<DataStore>(), sp.GetRequiredService<ISettingsService>()));
+
+        // Resource domain service (text-paste-resource/phase.md): text paste add/preview + token
+        // estimate hook. Siblings extend the estimator and add file/URL/image resource types.
+        services.AddSingleton<ITokenEstimator, HeuristicTokenEstimator>();
+        services.AddSingleton<IResourceService>(sp =>
+            new ResourceService(sp.GetRequiredService<DataStore>(), sp.GetRequiredService<ITokenEstimator>()));
 
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();
