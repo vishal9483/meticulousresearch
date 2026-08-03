@@ -36,4 +36,14 @@ public sealed record ChatRequest
 
     /// <summary>The resolved effective base URL (env wins, else the setting, else the public API).</summary>
     public required string BaseUrl { get; init; }
+
+    /// <summary>
+    /// The cache breakpoints marking the stable, cache-worthy segments of this request
+    /// (prompt-caching, SPEC §8): the system prompt segment and the enabled-resource context segment
+    /// when each is non-empty. Ordered most-stable-first (system before resources); the volatile tail
+    /// (<see cref="History"/> and <see cref="UserMessage"/>) is never marked. Each backend translates
+    /// these into its own cache-control markers so both send equivalent cache-enabled payloads. Empty
+    /// when the request has no stable segments to cache.
+    /// </summary>
+    public IReadOnlyList<CacheBreakpoint> CacheBreakpoints { get; init; } = Array.Empty<CacheBreakpoint>();
 }
