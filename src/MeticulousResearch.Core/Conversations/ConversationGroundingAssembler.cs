@@ -1,4 +1,5 @@
 using MeticulousResearch.Core.Ai;
+using MeticulousResearch.Core.Resources.Vision;
 
 namespace MeticulousResearch.Core.Conversations;
 
@@ -22,7 +23,8 @@ public sealed class ConversationGroundingAssembler
         string model,
         string userMessage,
         IReadOnlyList<ChatResource> resources,
-        IReadOnlyList<ChatHistoryMessage> history)
+        IReadOnlyList<ChatHistoryMessage> history,
+        IReadOnlyList<ImageContentBlock>? userImages = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(userMessage);
@@ -36,6 +38,7 @@ public sealed class ConversationGroundingAssembler
             UserMessage = userMessage,
             Resources = resources,
             History = history,
+            UserImages = userImages ?? Array.Empty<ImageContentBlock>(),
         };
     }
 }
