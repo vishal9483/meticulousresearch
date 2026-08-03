@@ -34,3 +34,6 @@ prompt-caching: APPROVED after 1 attempt, merged into main, gate=App56/Core266+1
 == M2 COMPLETE: all 9 features merged into main. Final gate=App56/Core266(+1 skip @requires-network). MILESTONE GATE - awaiting human sign-off for M3. ==
 
 fix/sqlite-pool-clear-race: FIXED M1 flake, merged into main. Root cause: 22 test Dispose() called global SqliteConnection.ClearAllPools(), disposing pooled sqlite3 handles of parallel test classes -> intermittent ObjectDisposedException. Fix: added DataStore.ClearConnectionPool() (scoped SqliteConnection.ClearPool for this store's connection string), replaced all 22 global calls. Verified 12/12 green Core loop + full gate App56/Core266+1skip. M1 flake RESOLVED - no longer a milestone-gate concern.
+
+## M3 (in progress) base=main
+artifact-creation (CONTRACT): APPROVED after 1 attempt, merged into main (0d7fbce), gate=App59/Core286+1skip. Contract: IArtifactService extended (Create/CreateFromContent/Generate/PromoteTurn/SetContent version-seam/Get/List/Rename + emit/update). ArtifactTypes registry(5 types+Normalize), ArtifactProvenance per version, real ArtifactService in DI, FakeArtifactService loud seams. Downstream: deliverable-templates->Generate; artifact-versioning owns SetContent history; edit-with-claude->version seam; report-composition->List/Get.
