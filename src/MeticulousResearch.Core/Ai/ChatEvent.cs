@@ -34,4 +34,12 @@ public sealed record ChatCancelled : ChatEvent;
 /// <param name="Kind">The classified error kind.</param>
 /// <param name="Retryable">Whether the caller may retry the turn.</param>
 /// <param name="Message">A human-readable, actionable error message (never a stack trace).</param>
-public sealed record ChatFaulted(ChatErrorKind Kind, bool Retryable, string Message) : ChatEvent;
+public sealed record ChatFaulted(ChatErrorKind Kind, bool Retryable, string Message) : ChatEvent
+{
+    /// <summary>
+    /// The server-provided <c>retry-after</c> hint (from a 429 <c>Retry-After</c> header), when
+    /// present. <c>rate-limit-backoff</c> honors it — waiting at least this long and overriding a
+    /// shorter computed backoff (SPEC §8). <c>null</c> when the backend gave no hint.
+    /// </summary>
+    public TimeSpan? RetryAfter { get; init; }
+}

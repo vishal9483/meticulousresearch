@@ -53,7 +53,8 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         IStreamingConversationService? streaming = null,
         ITurnActionService? turnActions = null,
         ITurnCostCalculator? costCalculator = null,
-        IClipboardService? clipboard = null)
+        IClipboardService? clipboard = null,
+        RetryStatusViewModel? retryStatus = null)
         : base(projectId)
     {
         _conversations = conversations;
@@ -61,6 +62,7 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         _turnActions = turnActions;
         _costCalculator = costCalculator;
         _clipboard = clipboard;
+        RetryStatus = retryStatus ?? new RetryStatusViewModel();
         var initialModel = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
         ModelPicker = new ModelPickerViewModel(catalog ?? ModelCatalogLoader.Default, initialModel);
         Turns = new ReadOnlyObservableCollection<ConversationTurnViewModel>(_turns);
@@ -69,6 +71,13 @@ public sealed partial class ConversationsViewModel : SectionViewModel
 
     /// <summary>The tiered model picker (model-selector) that selects the model for turns in this thread.</summary>
     public ModelPickerViewModel ModelPicker { get; }
+
+    /// <summary>
+    /// The "retrying…" indicator (rate-limit-backoff, SPEC §8): a non-alarming, attempt-numbered
+    /// state shown while a rate-limited/transient turn is being retried; clears on resolution. Wired
+    /// to a <see cref="MeticulousResearch.Core.Ai.Backoff.RetryingChatService"/> as its observer.
+    /// </summary>
+    public RetryStatusViewModel RetryStatus { get; }
 
     /// <inheritdoc />
     public override NavigationSection Section => NavigationSection.Conversations;

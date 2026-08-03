@@ -6,6 +6,7 @@ using MeticulousResearch.App.Theme;
 using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
+using MeticulousResearch.Core.Ai.Backoff;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Credentials;
@@ -92,7 +93,20 @@ public static class ServiceConfiguration
             sp.GetRequiredService<ISettingsService>(),
             sp.GetRequiredService<SidecarChatService>,
             sp.GetRequiredService<DirectApiChatService>));
-        services.AddSingleton<IChatService>(sp => sp.GetRequiredService<IChatBackendFactory>().Resolve());
+
+        // Rate-limit & transient-error backoff (rate-limit-backoff/phase.md, SPEC §8): decorate the
+        // resolved backend so every consumer (conversations, streaming, artifacts) retries 429 /
+        // transient 5xx with exponential backoff + jitter, honors retry-after, and surfaces a
+        // non-alarming "retrying…" state (RetryStatusViewModel) without losing work.
+        services.AddSingleton<IJitterSource, RandomJitterSource>();
+        services.AddSingleton<IRetryDelay, SystemRetryDelay>();
+        services.AddSingleton<RetryStatusViewModel>();
+        services.AddSingleton<IRetryObserver>(sp => sp.GetRequiredService<RetryStatusViewModel>());
+        services.AddSingleton<IChatService>(sp => new RetryingChatService(
+            sp.GetRequiredService<IChatBackendFactory>().Resolve(),
+            new BackoffPolicy(TimeSpan.FromSeconds(1), maxAttempts: 5, sp.GetRequiredService<IJitterSource>()),
+            sp.GetRequiredService<IRetryDelay>(),
+            sp.GetRequiredService<IRetryObserver>()));
         services.AddSingleton<IArtifactService, NotImplementedArtifactService>();        // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
         // overhead vs the selected model window (hard ceiling) and configured budget (soft), never
         // truncating silently.
