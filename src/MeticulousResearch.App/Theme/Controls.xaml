@@ -161,5 +161,86 @@
         </Setter>
     </Style>
 
+    <!-- =========================================================================================
+         Shared view-state controls (empty-loading-error-states/phase.md #2). Every view reuses
+         these so no pane is ever blank and no raw stack trace is shown (SPEC §3.7, §9.1(10)).
+         ========================================================================================= -->
+
+    <!-- Designed empty state: message + call-to-action button. -->
+    <Style TargetType="controls:EmptyState">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:EmptyState">
+                    <Border Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource SurfaceVariantBrush}" BorderThickness="1"
+                            CornerRadius="6" Padding="24"
+                            AutomationProperties.AutomationId="EmptyState">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="{TemplateBinding Message}"
+                                       AutomationProperties.AutomationId="EmptyStateMessage"
+                                       FontSize="{StaticResource FontSizeSubtitle}" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                                       TextAlignment="Center" />
+                            <Button Content="{TemplateBinding CallToAction}"
+                                    Command="{TemplateBinding CallToActionCommand}"
+                                    AutomationProperties.AutomationId="EmptyStateCallToAction"
+                                    HorizontalAlignment="Center" Margin="0,16,0,0" />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Designed error state: human-readable message + recovery button (never a stack trace). -->
+    <Style TargetType="controls:ErrorState">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:ErrorState">
+                    <Border Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource ErrorBrush}" BorderThickness="1"
+                            CornerRadius="6" Padding="24"
+                            AutomationProperties.AutomationId="ErrorState">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="{TemplateBinding Message}"
+                                       AutomationProperties.AutomationId="ErrorStateMessage"
+                                       FontSize="{StaticResource FontSizeBody}" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                                       TextAlignment="Center" />
+                            <Button Content="{TemplateBinding RecoveryAction}"
+                                    Command="{TemplateBinding RecoveryCommand}"
+                                    AutomationProperties.AutomationId="ErrorStateRecoveryButton"
+                                    HorizontalAlignment="Center" Margin="0,16,0,0" />
+                        </StackPanel>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Skeleton loader: shimmer placeholder rows shown while loading (purely visual). -->
+    <Style TargetType="controls:SkeletonLoader">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:SkeletonLoader">
+                    <ItemsControl AutomationProperties.AutomationId="SkeletonLoader"
+                                  Focusable="False">
+                        <ItemsControl.ItemsSource>
+                            <x:Array Type="{x:Type sys:Object}">
+                                <sys:Object /><sys:Object /><sys:Object />
+                            </x:Array>
+                        </ItemsControl.ItemsSource>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Height="16" Margin="0,0,0,12" CornerRadius="4"
+                                        Background="{DynamicResource SurfaceVariantBrush}" Opacity="0.6" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
 
