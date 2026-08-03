@@ -15,6 +15,7 @@ using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
+using MeticulousResearch.Core.Export;
 using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Resources;
@@ -68,6 +69,11 @@ public static class ServiceConfiguration
             sp.GetRequiredService<DataStore>(),
             sp.GetRequiredService<ICostPriceSource>(),
             sp.GetRequiredService<IClock>()));
+
+        // Usage CSV export (usage-csv-export/phase.md, SPEC §3.6, §9.1(7)): a deterministic, offline
+        // serializer over the cost engine's per-turn priced rows — raw data, not a branded deliverable.
+        services.AddSingleton<IUsageCsvExporter>(sp =>
+            new UsageCsvExporter(sp.GetRequiredService<ICostService>()));
 
         // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
         services.AddSingleton<IProjectService>(sp =>

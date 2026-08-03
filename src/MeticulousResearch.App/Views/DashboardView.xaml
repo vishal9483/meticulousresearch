@@ -89,6 +89,14 @@
                         <TextBlock Text="   All time: " Foreground="#777" />
                         <TextBlock Text="{Binding AllTime}" AutomationProperties.AutomationId="CostAllTime" />
                     </StackPanel>
+
+                    <!-- Export usage CSV (usage-csv-export, SPEC §3.6, §9.1(7)): raw per-turn data. -->
+                    <Button Content="Export usage CSV" Margin="0,12,0,0" Padding="12,8"
+                            HorizontalAlignment="Left"
+                            AutomationProperties.AutomationId="ExportUsageCsvButton"
+                            Command="{Binding ExportUsageCsvCommand}" />
+                    <TextBlock Text="{Binding ExportConfirmation}" Foreground="#2E7D32" Margin="0,6,0,0"
+                               AutomationProperties.AutomationId="ExportUsageCsvConfirmation" />
                 </StackPanel>
             </Border>
 
