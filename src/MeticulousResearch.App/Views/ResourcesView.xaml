@@ -101,7 +101,19 @@
 
             <!-- Resources table -->
             <Grid Grid.Column="0" Margin="0,0,8,0">
-                <DataGrid x:Name="ResourcesTable" ItemsSource="{Binding Resources}"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Live full-text search box (full-text-search) -->
+                <TextBox Grid.Row="0" Margin="0,0,0,8"
+                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.AutomationId="ResourceSearchBox"
+                         AutomationProperties.Name="Search resources" />
+
+                <Grid Grid.Row="1">
+                <DataGrid x:Name="ResourcesTable" ItemsSource="{Binding VisibleResources}"
                           SelectedItem="{Binding SelectedResource}"
                           AutoGenerateColumns="False" IsReadOnly="False"
                           HeadersVisibility="Column" CanUserAddRows="False"
@@ -127,6 +139,14 @@
                            AutomationProperties.AutomationId="ResourcesEmptyState"
                            Visibility="{Binding IsEmpty,
                                         Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <!-- Designed empty state when a search matches nothing -->
+                <TextBlock Text="{Binding NoSearchMatchesMessage}" Foreground="#999" TextWrapping="Wrap"
+                           VerticalAlignment="Top" Margin="4,8,0,0"
+                           AutomationProperties.AutomationId="ResourcesNoSearchMatches"
+                           Visibility="{Binding HasNoSearchMatches,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
             </Grid>
 
             <!-- Preview pane -->
