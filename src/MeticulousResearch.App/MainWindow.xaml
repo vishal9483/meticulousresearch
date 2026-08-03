@@ -10,30 +10,39 @@
         Title="MeticulousResearch"
         Height="800" Width="1200" MinWidth="1024" MinHeight="640"
         WindowState="Maximized" ResizeMode="CanResize">
-    <Grid>
+    <Grid x:Name="AppSurface" AutomationProperties.AutomationId="AppSurface"
+          Background="{DynamicResource SurfaceBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <!-- Top-level navigation rail (root: Projects). -->
-        <Border Grid.Column="0" Background="#0B2447" MinWidth="180">
+        <Border Grid.Column="0" Background="{DynamicResource PrimaryNavyBrush}" MinWidth="180">
             <DockPanel LastChildFill="False" Margin="8,12">
                 <TextBlock DockPanel.Dock="Top" Text="MeticulousResearch"
-                           Foreground="White" FontWeight="Bold" FontSize="15" Margin="8,0,8,16" TextWrapping="Wrap" />
+                           Foreground="{DynamicResource OnAccentBrush}" FontWeight="Bold" FontSize="15" Margin="8,0,8,16" TextWrapping="Wrap" />
                 <ItemsControl DockPanel.Dock="Top" x:Name="TopNav" ItemsSource="{Binding NavigationItems}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Button Content="{Binding Label}"
                                     Margin="0,2" Padding="10,8"
                                     HorizontalContentAlignment="Left"
-                                    Background="Transparent" Foreground="White" BorderThickness="0"
+                                    Background="Transparent" Foreground="{DynamicResource OnAccentBrush}" BorderThickness="0"
                                     Command="{Binding DataContext.GoHomeCommand,
                                               RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     AutomationProperties.Name="{Binding Label}" />
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                <!-- App-level quick theme toggle (design-system-theming); Settings surfaces the
+                     full Light/Dark/System choice later. -->
+                <Button DockPanel.Dock="Bottom" x:Name="ThemeToggle"
+                        AutomationProperties.AutomationId="ThemeToggle"
+                        Content="Toggle theme" Margin="0,8" Padding="10,8"
+                        HorizontalContentAlignment="Left"
+                        Background="Transparent" Foreground="{DynamicResource OnAccentBrush}" BorderThickness="0"
+                        Click="ThemeToggle_Click" />
             </DockPanel>
         </Border>
 
