@@ -103,17 +103,23 @@
             <Grid Grid.Column="0" Margin="0,0,8,0">
                 <DataGrid x:Name="ResourcesTable" ItemsSource="{Binding Resources}"
                           SelectedItem="{Binding SelectedResource}"
-                          AutoGenerateColumns="False" IsReadOnly="True"
+                          AutoGenerateColumns="False" IsReadOnly="False"
                           HeadersVisibility="Column" CanUserAddRows="False"
                           AutomationProperties.AutomationId="ResourcesTable">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" />
-                        <DataGridTextColumn Header="Type" Binding="{Binding TypeDisplay}" Width="Auto" />
-                        <DataGridTextColumn Header="Size" Binding="{Binding ByteSize}" Width="Auto" />
-                        <DataGridTextColumn Header="Tokens" Binding="{Binding TokenEstimate}" Width="Auto" />
-                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto" />
+                        <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Type" Binding="{Binding TypeDisplay}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Size" Binding="{Binding ByteSize}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Tokens" Binding="{Binding TokenEstimate}" Width="Auto" IsReadOnly="True" />
+                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="Auto" IsReadOnly="False" />
                     </DataGrid.Columns>
                 </DataGrid>
+
+                <!-- Enabled-scope token total (disabled resources excluded) -->
+                <TextBlock DockPanel.Dock="Bottom" Margin="4,8,0,0" Foreground="#555"
+                           AutomationProperties.AutomationId="ResourcesEnabledTotal"
+                           VerticalAlignment="Bottom"
+                           Text="{Binding EnabledTokenTotal, StringFormat='Enabled scope: {0} tokens'}" />
 
                 <!-- Designed empty state for a project with no resources -->
                 <TextBlock Text="{Binding EmptyStateMessage}" Foreground="#999" TextWrapping="Wrap"
@@ -129,6 +135,43 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Preview" FontWeight="SemiBold"
                                Margin="0,0,0,8" />
+                    <TextBlock DockPanel.Dock="Top" x:Name="PreviewMetadata" Margin="0,0,0,8"
+                               Foreground="#555" TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="ResourcePreviewMetadata"
+                               Text="{Binding SelectedMetadata}"
+                               Visibility="{Binding HasSelection,
+                                            Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <!-- Manage actions for the selected resource -->
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8"
+                                Visibility="{Binding HasSelection,
+                                             Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Button Content="Re-extract" Padding="10,4"
+                                AutomationProperties.AutomationId="ReExtractResourceButton"
+                                IsEnabled="{Binding CanReExtractSelected}"
+                                Command="{Binding ReExtractSelectedCommand}" />
+                        <Button Content="Remove" Padding="10,4" Margin="8,0,0,0"
+                                AutomationProperties.AutomationId="RemoveResourceButton"
+                                Command="{Binding RemoveSelectedCommand}" />
+                    </StackPanel>
+                    <!-- Remove confirmation prompt: nothing is deleted until confirmed -->
+                    <Border DockPanel.Dock="Top" Margin="0,0,0,8" Padding="8" CornerRadius="4"
+                            BorderBrush="#C0392B" BorderThickness="1"
+                            AutomationProperties.AutomationId="RemoveConfirm"
+                            Visibility="{Binding IsConfirmingRemove,
+                                         Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Remove this resource? This deletes its files and cannot be undone."
+                                       TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="Confirm remove" Padding="10,4"
+                                        AutomationProperties.AutomationId="ConfirmRemoveButton"
+                                        Command="{Binding ConfirmRemoveCommand}" />
+                                <Button Content="Cancel" Padding="10,4" Margin="8,0,0,0"
+                                        AutomationProperties.AutomationId="CancelRemoveButton"
+                                        Command="{Binding CancelRemoveCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                     <TextBlock DockPanel.Dock="Top" x:Name="PreviewSourceUri" Margin="0,0,0,8"
                                Foreground="#3366CC" TextWrapping="Wrap"
                                AutomationProperties.AutomationId="ResourcePreviewSourceUri"

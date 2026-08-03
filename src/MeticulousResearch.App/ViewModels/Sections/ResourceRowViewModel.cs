@@ -6,27 +6,53 @@ namespace MeticulousResearch.App.ViewModels.Sections;
 /// <summary>
 /// A single row in the resources table (SPEC §3.2): title, human-readable type, byte size, token
 /// estimate, and the enabled toggle. A thin projection of a <see cref="Resource"/> for display.
+/// Flipping <see cref="Enabled"/> raises <see cref="EnabledChanged"/> so the owning view-model can
+/// persist the new scope and recompute the enabled-scope token total.
 /// </summary>
-public sealed class ResourceRowViewModel
+public sealed class ResourceRowViewModel : System.ComponentModel.INotifyPropertyChanged
 {
+    private bool _enabled;
+
     /// <summary>Projects a persisted <see cref="Resource"/> into a display row.</summary>
     public ResourceRowViewModel(Resource resource)
     {
         ArgumentNullException.ThrowIfNull(resource);
         Id = resource.Id;
         Title = resource.Title;
+        StorageType = resource.Type;
         TypeDisplay = ToDisplayType(resource.Type);
         ByteSize = resource.ByteSize ?? 0;
         TokenEstimate = resource.TokenEstimate ?? 0;
-        Enabled = resource.Enabled;
+        _enabled = resource.Enabled;
         SourceUri = resource.SourceUri;
     }
+
+    /// <inheritdoc />
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Raised when <see cref="Enabled"/> is flipped by the user (new value supplied).</summary>
+    public event Action<bool>? EnabledChanged;
 
     /// <summary>The backing resource id.</summary>
     public string Id { get; }
 
+    private string _title = "";
+
     /// <summary>Display title.</summary>
-    public string Title { get; }
+    public string Title
+    {
+        get => _title;
+        set
+        {
+            if (_title == value)
+                return;
+            _title = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Title)));
+        }
+    }
+
+    /// <summary>The stable lowercase storage type (e.g. "text", "file", "url").</summary>
+    public string StorageType { get; }
 
     /// <summary>Human-readable resource type (e.g. "Text").</summary>
     public string TypeDisplay { get; }
@@ -34,11 +60,40 @@ public sealed class ResourceRowViewModel
     /// <summary>UTF-8 byte size of the source.</summary>
     public long ByteSize { get; }
 
-    /// <summary>Deterministic token estimate.</summary>
-    public long TokenEstimate { get; }
+    private long _tokenEstimate;
 
-    /// <summary>Whether the resource is included when building context.</summary>
-    public bool Enabled { get; }
+    /// <summary>Deterministic token estimate contribution of this resource.</summary>
+    public long TokenEstimate
+    {
+        get => _tokenEstimate;
+        set
+        {
+            if (_tokenEstimate == value)
+                return;
+            _tokenEstimate = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(TokenEstimate)));
+        }
+    }
+
+    /// <summary>
+    /// Whether the resource is included when building generation context. Setting it raises
+    /// <see cref="EnabledChanged"/> so the toggle persists and updates the enabled-scope total.
+    /// </summary>
+    public bool Enabled
+    {
+        get => _enabled;
+        set
+        {
+            if (_enabled == value)
+                return;
+            _enabled = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Enabled)));
+            EnabledChanged?.Invoke(value);
+        }
+    }
+
+    /// <summary>Whether a re-extract action is offered for this resource (not for pasted text).</summary>
+    public bool CanReExtract => StorageType != ResourceTypes.Text;
 
     /// <summary>The original path or URL the resource came from (null for pasted text).</summary>
     public string? SourceUri { get; }
