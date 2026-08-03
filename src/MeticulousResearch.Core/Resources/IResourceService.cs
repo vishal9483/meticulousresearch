@@ -1,4 +1,5 @@
 using MeticulousResearch.Core.Data.Entities;
+using MeticulousResearch.Core.Resources.Extraction;
 
 namespace MeticulousResearch.Core.Resources;
 
@@ -26,6 +27,21 @@ public interface IResourceService
     /// <returns>The saved <see cref="Resource"/>.</returns>
     /// <exception cref="ArgumentException">The text is empty or whitespace only.</exception>
     Resource AddText(string projectId, string? title, string text);
+
+    /// <summary>
+    /// Uploads a file resource (SPEC §3.2): copies the original into the resource directory as
+    /// <c>original.{ext}</c>, runs the extraction pipeline for the file's type, writes the extracted
+    /// text to <c>extracted.txt</c>, records source name / byte size / token estimate, and persists
+    /// the row (type <c>file</c>, enabled, timestamped). A file that parses to no text is stored with
+    /// an <see cref="ExtractionStatus.Empty"/> status and a hint; a file that cannot be parsed is
+    /// stored with its original blob and an <see cref="ExtractionStatus.Failed"/> status plus a
+    /// re-extract recovery affordance — neither crashes.
+    /// </summary>
+    /// <param name="projectId">Owning project id.</param>
+    /// <param name="filePath">Absolute path to the file being uploaded.</param>
+    /// <returns>The saved resource plus its extraction outcome.</returns>
+    /// <exception cref="UnsupportedFileTypeException">The file's type is not supported; no resource is created.</exception>
+    FileExtractionResult AddFile(string projectId, string filePath);
 
     /// <summary>Returns the resource with the given id, or <c>null</c> if it does not exist.</summary>
     Resource? Get(string resourceId);

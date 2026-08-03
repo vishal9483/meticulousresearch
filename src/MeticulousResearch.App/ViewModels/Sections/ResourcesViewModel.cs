@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Resources;
+using MeticulousResearch.Core.Resources.Extraction;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
@@ -136,6 +137,83 @@ public sealed partial class ResourcesViewModel : SectionViewModel
         SelectedResource = row;
         DraftTitle = "";
         DraftText = "";
+    }
+
+    private bool _isExtracting;
+
+    /// <summary>
+    /// Whether a file upload/extraction is currently running (drives the async progress indicator).
+    /// </summary>
+    public bool IsExtracting
+    {
+        get => _isExtracting;
+        private set => SetProperty(ref _isExtracting, value);
+    }
+
+    private string? _uploadHint;
+
+    /// <summary>
+    /// A hint surfaced after an upload whose extraction produced no text (e.g. a scanned PDF should
+    /// be added as an image resource), or a rejection/failure message. Null when there is none.
+    /// </summary>
+    public string? UploadHint
+    {
+        get => _uploadHint;
+        private set
+        {
+            if (SetProperty(ref _uploadHint, value))
+                OnPropertyChanged(nameof(HasUploadHint));
+        }
+    }
+
+    /// <summary>Whether an upload hint is currently shown.</summary>
+    public bool HasUploadHint => !string.IsNullOrEmpty(_uploadHint);
+
+    /// <summary>
+    /// Uploads one or more files as resources (SPEC §3.2). Extraction runs off the UI thread with
+    /// <see cref="IsExtracting"/> driving a progress indicator; each new resource is inserted at the
+    /// top and selected so its extracted preview shows. Unsupported types are rejected with a
+    /// message and no resource; extraction that yields no text surfaces the returned hint. The
+    /// original blob is always stored so nothing is lost on failure.
+    /// </summary>
+    [RelayCommand]
+    public async Task UploadFilesAsync(IReadOnlyList<string>? filePaths)
+    {
+        if (_resources is null || filePaths is null || filePaths.Count == 0)
+            return;
+
+        UploadHint = null;
+        IsExtracting = true;
+        try
+        {
+            foreach (var path in filePaths)
+            {
+                FileExtractionResult result;
+                try
+                {
+                    result = await Task.Run(() => _resources.AddFile(ProjectId, path)).ConfigureAwait(true);
+                }
+                catch (UnsupportedFileTypeException ex)
+                {
+                    UploadHint = ex.Message;
+                    continue;
+                }
+
+                var row = new ResourceRowViewModel(result.Resource);
+                Resources.Insert(0, row);
+                OnPropertyChanged(nameof(IsEmpty));
+                SelectedResource = row;
+
+                if (result.Status == ExtractionStatus.Failed)
+                    UploadHint = $"Extraction failed: {result.FailureReason} You can re-extract from the resource's actions.";
+                else if (result.Status == ExtractionStatus.Empty && !string.IsNullOrEmpty(result.Hint))
+                    UploadHint = result.Hint;
+            }
+        }
+        finally
+        {
+            IsExtracting = false;
+        }
     }
 
     /// <summary>(Re)loads the resource table from the service.</summary>
