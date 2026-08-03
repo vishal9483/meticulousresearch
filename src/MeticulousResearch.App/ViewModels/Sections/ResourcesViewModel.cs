@@ -67,6 +67,8 @@ public sealed partial class ResourcesViewModel : SectionViewModel
                 OnPropertyChanged(nameof(HasSelection));
                 OnPropertyChanged(nameof(SelectedSourceUri));
                 OnPropertyChanged(nameof(HasSelectedSourceUri));
+                OnPropertyChanged(nameof(SelectedMetadata));
+                OnPropertyChanged(nameof(CanReExtractSelected));
             }
         }
     }
@@ -143,9 +145,10 @@ public sealed partial class ResourcesViewModel : SectionViewModel
             return;
 
         var resource = _resources.AddText(ProjectId, DraftTitle, DraftText);
-        var row = new ResourceRowViewModel(resource);
+        var row = CreateRow(resource);
         Resources.Insert(0, row);
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(EnabledTokenTotal));
         SelectedResource = row;
         DraftTitle = "";
         DraftText = "";
@@ -211,9 +214,10 @@ public sealed partial class ResourcesViewModel : SectionViewModel
                     continue;
                 }
 
-                var row = new ResourceRowViewModel(result.Resource);
+                var row = CreateRow(result.Resource);
                 Resources.Insert(0, row);
                 OnPropertyChanged(nameof(IsEmpty));
+                OnPropertyChanged(nameof(EnabledTokenTotal));
                 SelectedResource = row;
 
                 if (result.Status == ExtractionStatus.Failed)
@@ -321,9 +325,10 @@ public sealed partial class ResourcesViewModel : SectionViewModel
                 return;
             }
 
-            var row = new ResourceRowViewModel(resource);
+            var row = CreateRow(resource);
             Resources.Insert(0, row);
             OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(EnabledTokenTotal));
             SelectedResource = row;
             DraftUrl = "";
         }
@@ -340,9 +345,146 @@ public sealed partial class ResourcesViewModel : SectionViewModel
         if (_resources is not null)
         {
             foreach (var r in _resources.List(ProjectId))
-                Resources.Add(new ResourceRowViewModel(r));
+                Resources.Add(CreateRow(r));
         }
 
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(EnabledTokenTotal));
+    }
+
+    /// <summary>
+    /// Wraps a persisted resource in a display row wired so flipping its enabled toggle persists the
+    /// new scope through the service and recomputes the enabled-scope token total.
+    /// </summary>
+    private ResourceRowViewModel CreateRow(Core.Data.Entities.Resource resource)
+    {
+        var row = new ResourceRowViewModel(resource);
+        row.EnabledChanged += enabled =>
+        {
+            _resources?.SetEnabled(row.Id, enabled);
+            OnPropertyChanged(nameof(EnabledTokenTotal));
+        };
+        return row;
+    }
+
+    /// <summary>
+    /// The total token estimate across the project's <em>enabled</em> resources (SPEC §3.2) — the
+    /// pre-send generation scope. Disabled resources are excluded. Reused by <c>context-budget</c>.
+    /// </summary>
+    public long EnabledTokenTotal => Resources.Where(r => r.Enabled).Sum(r => r.TokenEstimate);
+
+    /// <summary>
+    /// A one-line metadata summary of the selected resource for the preview pane — its type, byte
+    /// size, and token estimate; empty when nothing is selected.
+    /// </summary>
+    public string SelectedMetadata => _selectedResource is null
+        ? ""
+        : $"{_selectedResource.TypeDisplay} \u00b7 {_selectedResource.ByteSize} bytes \u00b7 {_selectedResource.TokenEstimate} tokens";
+
+    /// <summary>Whether the selected resource offers a re-extract action (not pasted text).</summary>
+    public bool CanReExtractSelected => _selectedResource?.CanReExtract == true;
+
+    /// <summary>
+    /// Renames the selected resource to <paramref name="newTitle"/>. A blank title is rejected with an
+    /// inline <see cref="RenameError"/> and the title is left unchanged; otherwise the row's title
+    /// updates in place.
+    /// </summary>
+    [RelayCommand]
+    public void RenameSelected(string? newTitle)
+    {
+        RenameError = null;
+        if (_selectedResource is null || _resources is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(newTitle))
+        {
+            RenameError = "A resource title must not be blank.";
+            return;
+        }
+
+        var updated = _resources.Rename(_selectedResource.Id, newTitle);
+        _selectedResource.Title = updated.Title;
+    }
+
+    private string? _renameError;
+
+    /// <summary>Inline validation error surfaced when a rename is rejected; null when valid.</summary>
+    public string? RenameError
+    {
+        get => _renameError;
+        private set
+        {
+            if (SetProperty(ref _renameError, value))
+                OnPropertyChanged(nameof(HasRenameError));
+        }
+    }
+
+    /// <summary>Whether an inline rename validation error is currently shown.</summary>
+    public bool HasRenameError => !string.IsNullOrEmpty(_renameError);
+
+    /// <summary>
+    /// Re-extracts the selected resource against its stored original, refreshing the preview text and
+    /// its token-estimate contribution (and the enabled-scope total). Unavailable for pasted text.
+    /// </summary>
+    [RelayCommand]
+    public void ReExtractSelected()
+    {
+        if (_selectedResource is null || _resources is null || !_selectedResource.CanReExtract)
+            return;
+
+        var result = _resources.ReExtract(_selectedResource.Id);
+        _selectedResource.TokenEstimate = result.Resource.TokenEstimate ?? 0;
+        OnPropertyChanged(nameof(PreviewText));
+        OnPropertyChanged(nameof(SelectedMetadata));
+        OnPropertyChanged(nameof(EnabledTokenTotal));
+    }
+
+    private bool _isConfirmingRemove;
+
+    /// <summary>
+    /// Whether the UI is asking the analyst to confirm removal of the selected resource. Nothing is
+    /// deleted until <see cref="ConfirmRemoveCommand"/> runs.
+    /// </summary>
+    public bool IsConfirmingRemove
+    {
+        get => _isConfirmingRemove;
+        private set => SetProperty(ref _isConfirmingRemove, value);
+    }
+
+    /// <summary>
+    /// Begins removal of the selected resource by asking for confirmation first; no resource is
+    /// deleted at this point (SPEC §3.2 — remove is confirmed).
+    /// </summary>
+    [RelayCommand]
+    public void RemoveSelected()
+    {
+        if (_selectedResource is null)
+            return;
+        IsConfirmingRemove = true;
+    }
+
+    /// <summary>Cancels a pending remove confirmation without deleting anything.</summary>
+    [RelayCommand]
+    public void CancelRemove() => IsConfirmingRemove = false;
+
+    /// <summary>
+    /// Confirms and performs removal of the selected resource: deletes its row and on-disk files
+    /// through the service, drops the row from the table, clears the selection, and refreshes totals.
+    /// </summary>
+    [RelayCommand]
+    public void ConfirmRemove()
+    {
+        if (_selectedResource is null || _resources is null)
+        {
+            IsConfirmingRemove = false;
+            return;
+        }
+
+        _resources.Remove(_selectedResource.Id);
+        Resources.Remove(_selectedResource);
+        SelectedResource = null;
+        IsConfirmingRemove = false;
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(EnabledTokenTotal));
     }
 }

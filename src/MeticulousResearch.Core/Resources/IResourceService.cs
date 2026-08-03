@@ -67,8 +67,60 @@ public interface IResourceService
     IReadOnlyList<Resource> List(string projectId);
 
     /// <summary>
+    /// Returns the project's <em>enabled</em> resources, most recently added first — the single
+    /// source of truth for what the generation-context assembler includes (SPEC §3.2). Disabled
+    /// resources are excluded.
+    /// </summary>
+    IReadOnlyList<Resource> ListEnabled(string projectId);
+
+    /// <summary>
     /// Reads the extracted text of a resource from disk (its <c>extracted.txt</c>), or an empty
     /// string when the resource has no extracted text on disk.
     /// </summary>
     string GetExtractedText(string resourceId);
+
+    /// <summary>
+    /// Renames a resource (SPEC §3.2): validates the new title is non-blank, updates the title and
+    /// <c>updated_at</c>, and persists. A blank title is rejected and the title is left unchanged.
+    /// </summary>
+    /// <param name="resourceId">The resource to rename.</param>
+    /// <param name="newTitle">The new display title; must contain non-whitespace content.</param>
+    /// <returns>The updated <see cref="Resource"/>.</returns>
+    /// <exception cref="ArgumentException">The new title is null, empty, or whitespace only.</exception>
+    /// <exception cref="InvalidOperationException">No resource has the given id.</exception>
+    Resource Rename(string resourceId, string newTitle);
+
+    /// <summary>
+    /// Enables or disables a resource (SPEC §3.2). The enabled flag is the single source of truth
+    /// for whether the resource is included in the assembled generation context. Updates
+    /// <c>updated_at</c> and persists.
+    /// </summary>
+    /// <param name="resourceId">The resource to toggle.</param>
+    /// <param name="enabled">Whether the resource should be included in generation scope.</param>
+    /// <returns>The updated <see cref="Resource"/>.</returns>
+    /// <exception cref="InvalidOperationException">No resource has the given id.</exception>
+    Resource SetEnabled(string resourceId, bool enabled);
+
+    /// <summary>
+    /// Re-runs the appropriate extractor against the resource's stored original (SPEC §3.2, §3.7):
+    /// refreshes <c>extracted.txt</c>, recomputes the token estimate, updates <c>updated_at</c>, and
+    /// persists. File resources re-run the file extractor against the stored blob; URL resources
+    /// re-convert the stored HTML (offline, idempotent). A previously-failed extraction can recover
+    /// to <see cref="ExtractionStatus.Success"/>. Re-extract is unavailable for pasted-text
+    /// resources, whose text is authored inline rather than extracted.
+    /// </summary>
+    /// <param name="resourceId">The resource to re-extract.</param>
+    /// <returns>The refreshed resource plus its new extraction outcome.</returns>
+    /// <exception cref="InvalidOperationException">No resource has the given id, or it has no stored original.</exception>
+    /// <exception cref="NotSupportedException">The resource is a pasted-text resource and cannot be re-extracted.</exception>
+    FileExtractionResult ReExtract(string resourceId);
+
+    /// <summary>
+    /// Removes a resource (SPEC §3.2): deletes its database row (its full-text-search rows follow via
+    /// triggers) and its on-disk directory
+    /// <c>projects/{projectId}/resources/{resourceId}</c> (original blob and extracted text). A
+    /// missing resource is a no-op.
+    /// </summary>
+    /// <param name="resourceId">The resource to remove.</param>
+    void Remove(string resourceId);
 }

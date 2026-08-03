@@ -263,6 +263,121 @@ public sealed class ResourceService : IResourceService
         return File.ReadAllText(resource.ExtractedPath, Encoding.UTF8);
     }
 
+    /// <inheritdoc />
+    public IReadOnlyList<Resource> ListEnabled(string projectId) =>
+        List(projectId).Where(r => r.Enabled).ToList();
+
+    /// <inheritdoc />
+    public Resource Rename(string resourceId, string newTitle)
+    {
+        if (string.IsNullOrWhiteSpace(newTitle))
+            throw new ArgumentException("A resource title must not be blank.", nameof(newTitle));
+
+        using var db = _store.CreateDbContext();
+        var resource = db.Resources.FirstOrDefault(r => r.Id == resourceId)
+            ?? throw new InvalidOperationException($"Resource '{resourceId}' not found.");
+
+        resource.Title = newTitle.Trim();
+        resource.UpdatedAt = Now();
+        db.SaveChanges();
+        return resource;
+    }
+
+    /// <inheritdoc />
+    public Resource SetEnabled(string resourceId, bool enabled)
+    {
+        using var db = _store.CreateDbContext();
+        var resource = db.Resources.FirstOrDefault(r => r.Id == resourceId)
+            ?? throw new InvalidOperationException($"Resource '{resourceId}' not found.");
+
+        resource.Enabled = enabled;
+        resource.UpdatedAt = Now();
+        db.SaveChanges();
+        return resource;
+    }
+
+    /// <inheritdoc />
+    public FileExtractionResult ReExtract(string resourceId)
+    {
+        using var db = _store.CreateDbContext();
+        var resource = db.Resources.FirstOrDefault(r => r.Id == resourceId)
+            ?? throw new InvalidOperationException($"Resource '{resourceId}' not found.");
+
+        if (resource.Type == ResourceTypes.Text)
+            throw new NotSupportedException(
+                "Re-extract is not available for pasted-text resources; their text is authored inline.");
+
+        if (string.IsNullOrEmpty(resource.BlobPath) || !File.Exists(resource.BlobPath))
+            throw new InvalidOperationException(
+                $"Resource '{resourceId}' has no stored original to re-extract from.");
+
+        string extractedText;
+        var status = ExtractionStatus.Success;
+        string? failureReason = null;
+        string? hint = null;
+
+        if (resource.Type == ResourceTypes.Url)
+        {
+            // Re-convert the stored HTML offline (idempotent) rather than re-fetching the network.
+            var rawHtml = File.ReadAllText(resource.BlobPath, Encoding.UTF8);
+            var converted = _htmlConverter.Convert(rawHtml);
+            extractedText = converted.Markdown ?? "";
+            if (string.IsNullOrWhiteSpace(extractedText))
+                status = ExtractionStatus.Empty;
+        }
+        else
+        {
+            var extractor = _pipeline.Resolve(resource.BlobPath);
+            try
+            {
+                var content = extractor.Extract(resource.BlobPath);
+                extractedText = content.Text ?? "";
+                if (string.IsNullOrWhiteSpace(extractedText))
+                {
+                    status = ExtractionStatus.Empty;
+                    hint = content.EmptyHint;
+                }
+            }
+            catch (Exception ex)
+            {
+                extractedText = "";
+                status = ExtractionStatus.Failed;
+                failureReason = ex.Message;
+            }
+        }
+
+        var extractedPath = string.IsNullOrEmpty(resource.ExtractedPath)
+            ? Path.Combine(
+                _store.FileStore.GetResourceDirectory(resource.ProjectId, resource.Id), ExtractedTextFileName)
+            : resource.ExtractedPath;
+        File.WriteAllText(extractedPath, extractedText, Utf8NoBom);
+
+        resource.ExtractedPath = extractedPath;
+        resource.TokenEstimate = _estimator.Estimate(extractedText);
+        resource.UpdatedAt = Now();
+        db.SaveChanges();
+
+        return new FileExtractionResult(resource, status, failureReason, hint);
+    }
+
+    /// <inheritdoc />
+    public void Remove(string resourceId)
+    {
+        using var db = _store.CreateDbContext();
+        var resource = db.Resources.FirstOrDefault(r => r.Id == resourceId);
+        if (resource is null)
+            return;
+
+        var resourceDir = Path.Combine(
+            _store.FileStore.DataDirectory, "projects", resource.ProjectId, "resources", resource.Id);
+
+        db.Resources.Remove(resource);
+        db.SaveChanges();
+
+        if (Directory.Exists(resourceDir))
+            Directory.Delete(resourceDir, recursive: true);
+    }
+
     private static string ResolveTitle(string? title, string text)
     {
         if (!string.IsNullOrWhiteSpace(title))
