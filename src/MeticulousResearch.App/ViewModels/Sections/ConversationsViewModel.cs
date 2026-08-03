@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.Services;
 using MeticulousResearch.Core.Conversations;
+using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Settings;
 using MeticulousResearch.Core.Turns;
@@ -23,6 +24,7 @@ public sealed partial class ConversationsViewModel : SectionViewModel
     private readonly IStreamingConversationService? _streaming;
     private readonly ITurnActionService? _turnActions;
     private readonly ITurnCostCalculator? _costCalculator;
+    private readonly ICostService? _cost;
     private readonly IClipboardService? _clipboard;
     private readonly Dictionary<ConversationTurnViewModel, StreamingTurn> _streamingTurns = new();
     private CancellationTokenSource? _activeCts;
@@ -54,13 +56,15 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         ITurnActionService? turnActions = null,
         ITurnCostCalculator? costCalculator = null,
         IClipboardService? clipboard = null,
-        RetryStatusViewModel? retryStatus = null)
+        RetryStatusViewModel? retryStatus = null,
+        ICostService? cost = null)
         : base(projectId)
     {
         _conversations = conversations;
         _streaming = streaming;
         _turnActions = turnActions;
         _costCalculator = costCalculator;
+        _cost = cost;
         _clipboard = clipboard;
         RetryStatus = retryStatus ?? new RetryStatusViewModel();
         var initialModel = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
@@ -87,6 +91,23 @@ public sealed partial class ConversationsViewModel : SectionViewModel
 
     /// <summary>Designed one-line description of what this section is for.</summary>
     public string Headline => "Grounded, model-selectable Q&A threads for this project.";
+
+    /// <summary>
+    /// The conversation's running cost (SPEC §3.6), formatted for the thread header. Recomputed from
+    /// stored tokens at current prices via <see cref="ICostService"/> as each turn completes; shows
+    /// <c>$0.00</c> until a cost service is wired or a turn has completed.
+    /// </summary>
+    public string RunningCostDisplay { get; private set; } = 0m.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+
+    /// <summary>Recomputes the header running cost for the active conversation from current prices.</summary>
+    public void RefreshRunningCost()
+    {
+        if (_cost is null || _conversationId is null)
+            return;
+        var total = _cost.GetConversationCost(_conversationId).Cost;
+        RunningCostDisplay = total.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        OnPropertyChanged(nameof(RunningCostDisplay));
+    }
 
     private readonly ObservableCollection<ConversationTurnViewModel> _turns = new();
 
@@ -147,6 +168,7 @@ public sealed partial class ConversationsViewModel : SectionViewModel
             _turns.Add(turnVm);
             OnPropertyChanged(nameof(IsEmpty));
             AttachActions(turnVm);
+            RefreshRunningCost();
         }
         finally
         {
@@ -182,6 +204,7 @@ public sealed partial class ConversationsViewModel : SectionViewModel
             live.MessageId = turn.PersistedMessageId;
             if (!turn.IsInterrupted)
                 AttachActions(live);
+            RefreshRunningCost();
         }
         finally
         {
