@@ -99,6 +99,39 @@ public sealed class FakeArtifactService : IArtifactService
     public ArtifactVersion SetContent(string artifactId, string content) => throw new NotSupportedException(DomainOwner);
 
     /// <inheritdoc />
+    public ArtifactVersion AddVersion(string artifactId, string content, ArtifactProvenance provenance)
+        => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public void OverwriteVersionContent(string versionId, string content) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Task<ArtifactVersion> Regenerate(
+        string artifactId, GenerateArtifactRequest request, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public IReadOnlyList<ArtifactVersion> GetHistory(string artifactId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Artifact SetCurrentVersion(string artifactId, string versionId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public ArtifactVersion RevertTo(string artifactId, string versionId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Artifact DuplicateArtifact(string artifactId, string newTitle) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public void DeleteArtifact(string artifactId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public void DeleteVersion(string artifactId, string versionId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Resource PromoteToResource(string artifactId, string targetProjectId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
     public Artifact? Get(string artifactId) => throw new NotSupportedException(DomainOwner);
 
     /// <inheritdoc />

@@ -1,9 +1,12 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Data.Entities;
+using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Time;
+using MeticulousResearch.Core.Turns;
 
 namespace MeticulousResearch.Core.Artifacts;
 
@@ -20,17 +23,24 @@ public sealed class ArtifactService : IArtifactService
     private readonly DataStore _store;
     private readonly IChatService _chat;
     private readonly IClock _clock;
+    private readonly ITurnCostCalculator? _costCalculator;
 
     /// <summary>Creates the artifact service over its collaborators.</summary>
     /// <param name="store">The data store holding artifact rows.</param>
     /// <param name="chat">The generation gateway used by <see cref="Generate"/>.</param>
     /// <param name="clock">Injected clock for created_at/updated_at (TESTING-STRATEGY §4).</param>
-    /// <exception cref="ArgumentNullException">A collaborator is null.</exception>
-    public ArtifactService(DataStore store, IChatService chat, IClock clock)
+    /// <param name="costCalculator">
+    /// Optional per-turn cost seam used to price a regenerated version's <c>cost_usd</c> from its
+    /// token usage (SPEC §3.6). When null, generated versions record no cost. The authoritative
+    /// engine is owned by <c>cost-tracking</c> (M4).
+    /// </param>
+    /// <exception cref="ArgumentNullException">A required collaborator is null.</exception>
+    public ArtifactService(DataStore store, IChatService chat, IClock clock, ITurnCostCalculator? costCalculator = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _chat = chat ?? throw new ArgumentNullException(nameof(chat));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _costCalculator = costCalculator;
     }
 
     /// <inheritdoc />
@@ -167,6 +177,267 @@ public sealed class ArtifactService : IArtifactService
         AddVersion(artifactId, content, ArtifactProvenance.User());
 
     /// <inheritdoc />
+    public void OverwriteVersionContent(string versionId, string content) =>
+        throw new NotSupportedException(
+            "Saved artifact versions are immutable; every change must create a new version via AddVersion.");
+
+    /// <inheritdoc />
+    public async Task<ArtifactVersion> Regenerate(
+        string artifactId, GenerateArtifactRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+            throw new ArtifactValidationException("A non-empty prompt is required to regenerate an artifact.");
+        if (string.IsNullOrWhiteSpace(request.Model))
+            throw new ArtifactValidationException("A model is required to regenerate an artifact.");
+
+        using (var db = _store.CreateDbContext())
+        {
+            if (!db.Artifacts.AsNoTracking().Any(a => a.Id == artifactId))
+                throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+        }
+
+        var context = new ChatAskContext
+        {
+            Model = request.Model,
+            UserMessage = request.Prompt,
+            CustomInstructions = request.CustomInstructions,
+            Resources = request.Resources,
+        };
+
+        string? content = null;
+        ChatUsage usage = ChatUsage.Zero;
+        await foreach (var evt in _chat.Ask(context, cancellationToken).ConfigureAwait(false))
+        {
+            switch (evt)
+            {
+                case ChatCompleted completed:
+                    content = completed.Text;
+                    usage = completed.Usage;
+                    break;
+                case ChatCancelled:
+                    throw new OperationCanceledException("Artifact regeneration was cancelled.");
+                case ChatFaulted faulted:
+                    throw new InvalidOperationException($"Artifact regeneration failed: {faulted.Message}");
+            }
+        }
+
+        if (content is null)
+            throw new InvalidOperationException("Artifact regeneration produced no completion.");
+
+        var scope = request.Resources.Select(r => r.Id).ToArray();
+        var cost = PriceGeneration(request.Model, usage);
+        var provenance = ArtifactProvenance.Claude(
+            request.Model, request.Prompt, scope, usage.InputTokens, usage.OutputTokens, cost);
+        return AddVersion(artifactId, content, provenance);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<ArtifactVersion> GetHistory(string artifactId)
+    {
+        using var db = _store.CreateDbContext();
+        if (!db.Artifacts.AsNoTracking().Any(a => a.Id == artifactId))
+            throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+
+        return db.ArtifactVersions.AsNoTracking()
+            .Where(v => v.ArtifactId == artifactId)
+            .ToList()
+            .OrderByDescending(v => v.VersionNo)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public Artifact SetCurrentVersion(string artifactId, string versionId)
+    {
+        using var db = _store.CreateDbContext();
+        var artifact = db.Artifacts.FirstOrDefault(a => a.Id == artifactId)
+            ?? throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+        var version = db.ArtifactVersions.AsNoTracking().FirstOrDefault(v => v.Id == versionId)
+            ?? throw new InvalidOperationException($"Version '{versionId}' does not exist.");
+        if (version.ArtifactId != artifactId)
+            throw new InvalidOperationException($"Version '{versionId}' does not belong to artifact '{artifactId}'.");
+
+        artifact.CurrentVersionId = versionId;
+        artifact.UpdatedAt = Now();
+        db.SaveChanges();
+        return artifact;
+    }
+
+    /// <inheritdoc />
+    public ArtifactVersion RevertTo(string artifactId, string versionId)
+    {
+        string content;
+        using (var db = _store.CreateDbContext())
+        {
+            if (!db.Artifacts.AsNoTracking().Any(a => a.Id == artifactId))
+                throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+            var target = db.ArtifactVersions.AsNoTracking().FirstOrDefault(v => v.Id == versionId)
+                ?? throw new InvalidOperationException($"Version '{versionId}' does not exist.");
+            if (target.ArtifactId != artifactId)
+                throw new InvalidOperationException($"Version '{versionId}' does not belong to artifact '{artifactId}'.");
+            content = target.Content;
+        }
+
+        return AddVersion(artifactId, content, ArtifactProvenance.User());
+    }
+
+    /// <inheritdoc />
+    public Artifact DuplicateArtifact(string artifactId, string newTitle)
+    {
+        if (string.IsNullOrWhiteSpace(newTitle))
+            throw new ArtifactValidationException("An artifact title is required.");
+
+        using var db = _store.CreateDbContext();
+        var source = db.Artifacts.AsNoTracking().FirstOrDefault(a => a.Id == artifactId)
+            ?? throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+        var versions = db.ArtifactVersions.AsNoTracking()
+            .Where(v => v.ArtifactId == artifactId)
+            .ToList()
+            .OrderBy(v => v.VersionNo)
+            .ToList();
+
+        var now = Now();
+        var newArtifactId = NewId();
+        var copy = new Artifact
+        {
+            Id = newArtifactId,
+            ProjectId = source.ProjectId,
+            Title = newTitle,
+            Type = source.Type,
+            CurrentVersionId = null,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        string? currentCopyVersionId = null;
+        foreach (var v in versions)
+        {
+            var copyVersionId = NewId();
+            if (v.Id == source.CurrentVersionId)
+                currentCopyVersionId = copyVersionId;
+
+            db.ArtifactVersions.Add(new ArtifactVersion
+            {
+                Id = copyVersionId,
+                ArtifactId = newArtifactId,
+                VersionNo = v.VersionNo,
+                Content = v.Content,
+                ContentFormat = v.ContentFormat,
+                Model = v.Model,
+                Prompt = v.Prompt,
+                TokensIn = v.TokensIn,
+                TokensOut = v.TokensOut,
+                CostUsd = v.CostUsd,
+                ResourceScopeJson = v.ResourceScopeJson,
+                CreatedBy = v.CreatedBy,
+                CreatedAt = v.CreatedAt,
+            });
+        }
+
+        copy.CurrentVersionId = currentCopyVersionId;
+        db.Artifacts.Add(copy);
+        db.SaveChanges();
+        return copy;
+    }
+
+    /// <inheritdoc />
+    public void DeleteArtifact(string artifactId)
+    {
+        using var db = _store.CreateDbContext();
+        var artifact = db.Artifacts.FirstOrDefault(a => a.Id == artifactId);
+        if (artifact is null)
+            return;
+
+        var versions = db.ArtifactVersions.Where(v => v.ArtifactId == artifactId).ToList();
+        db.ArtifactVersions.RemoveRange(versions);
+        db.Artifacts.Remove(artifact);
+        db.SaveChanges();
+    }
+
+    /// <inheritdoc />
+    public void DeleteVersion(string artifactId, string versionId)
+    {
+        using var db = _store.CreateDbContext();
+        var artifact = db.Artifacts.AsNoTracking().FirstOrDefault(a => a.Id == artifactId)
+            ?? throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+        var version = db.ArtifactVersions.FirstOrDefault(v => v.Id == versionId)
+            ?? throw new InvalidOperationException($"Version '{versionId}' does not exist.");
+        if (version.ArtifactId != artifactId)
+            throw new InvalidOperationException($"Version '{versionId}' does not belong to artifact '{artifactId}'.");
+        if (artifact.CurrentVersionId == versionId)
+            throw new InvalidOperationException(
+                "The current version cannot be deleted; set another version current first.");
+
+        db.ArtifactVersions.Remove(version);
+        db.SaveChanges();
+    }
+
+    /// <inheritdoc />
+    public Resource PromoteToResource(string artifactId, string targetProjectId)
+    {
+        if (string.IsNullOrWhiteSpace(targetProjectId))
+            throw new ArtifactValidationException("A target project id is required to promote an artifact.");
+
+        Artifact artifact;
+        ArtifactVersion current;
+        using (var db = _store.CreateDbContext())
+        {
+            artifact = db.Artifacts.AsNoTracking().FirstOrDefault(a => a.Id == artifactId)
+                ?? throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
+            current = db.ArtifactVersions.AsNoTracking().FirstOrDefault(v => v.Id == artifact.CurrentVersionId)
+                ?? throw new InvalidOperationException($"Artifact '{artifactId}' has no current version.");
+        }
+
+        var resourceId = NewId();
+        var content = current.Content ?? "";
+        var resourceDir = _store.FileStore.GetResourceDirectory(targetProjectId, resourceId);
+        var extractedPath = Path.Combine(resourceDir, "extracted.txt");
+        File.WriteAllText(extractedPath, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        var now = Now();
+        var resource = new Resource
+        {
+            Id = resourceId,
+            ProjectId = targetProjectId,
+            Title = artifact.Title,
+            Type = ResourceTypes.ArtifactRef,
+            SourceUri = artifactId,
+            BlobPath = null,
+            ExtractedPath = extractedPath,
+            ExtractedText = content,
+            ByteSize = Encoding.UTF8.GetByteCount(content),
+            TokenEstimate = null,
+            Enabled = false,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        using (var db = _store.CreateDbContext())
+        {
+            db.Resources.Add(resource);
+            db.SaveChanges();
+        }
+
+        return resource;
+    }
+
+    private double? PriceGeneration(string? model, ChatUsage usage)
+    {
+        if (_costCalculator is null)
+            return null;
+
+        var breakdown = _costCalculator.Calculate(new TurnMetadata
+        {
+            Model = model,
+            InputTokens = usage.InputTokens,
+            OutputTokens = usage.OutputTokens,
+            CacheReadTokens = usage.CacheReadTokens,
+            CacheWriteTokens = usage.CacheWriteTokens,
+        });
+        return breakdown.Total;
+    }
+
+    /// <inheritdoc />
     public Artifact? Get(string artifactId)
     {
         using var db = _store.CreateDbContext();
@@ -245,8 +516,9 @@ public sealed class ArtifactService : IArtifactService
     /// bumps the artifact's <c>updated_at</c>. The version's <c>content_format</c> is the artifact
     /// type's default format so, e.g., a diagram always stores raw Mermaid source.
     /// </summary>
-    private ArtifactVersion AddVersion(string artifactId, string content, ArtifactProvenance provenance)
+    public ArtifactVersion AddVersion(string artifactId, string content, ArtifactProvenance provenance)
     {
+        ArgumentNullException.ThrowIfNull(provenance);
         using var db = _store.CreateDbContext();
         var artifact = db.Artifacts.FirstOrDefault(a => a.Id == artifactId)
             ?? throw new InvalidOperationException($"Artifact '{artifactId}' does not exist.");
