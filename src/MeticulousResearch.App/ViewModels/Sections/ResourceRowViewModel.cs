@@ -19,6 +19,7 @@ public sealed class ResourceRowViewModel
         ByteSize = resource.ByteSize ?? 0;
         TokenEstimate = resource.TokenEstimate ?? 0;
         Enabled = resource.Enabled;
+        SourceUri = resource.SourceUri;
     }
 
     /// <summary>The backing resource id.</summary>
@@ -38,6 +39,9 @@ public sealed class ResourceRowViewModel
 
     /// <summary>Whether the resource is included when building context.</summary>
     public bool Enabled { get; }
+
+    /// <summary>The original path or URL the resource came from (null for pasted text).</summary>
+    public string? SourceUri { get; }
 
     private static string ToDisplayType(string storageType) => storageType switch
     {

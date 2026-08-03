@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Resources;
+using MeticulousResearch.Core.Resources.Url;
 using MeticulousResearch.TestSupport;
 
 namespace MeticulousResearch.App.Tests;
@@ -122,4 +123,71 @@ public sealed class ResourcesViewModelTests : IDisposable
         Assert.True(vm.IsEmpty);
         Assert.Empty(_service.List(_projectId));
     }
+
+    private const string ArticlePage =
+        "<html><head><title>2025 Foundry Outlook</title></head>" +
+        "<body><article><h1>Foundry Report</h1>" +
+        "<p>Global foundry capacity grew 12% in 2025.</p></article></body></html>";
+
+    private ResourceService UrlService(FakeUrlFetcher fetcher) =>
+        new(_store, new HeuristicTokenEstimator(), fetcher);
+
+    // Backs @ui "Adding a URL shows fetch progress then the converted preview": on success the new
+    // row lists type "URL", is selected, and the preview exposes the converted markdown + source URL.
+    [Fact]
+    public async Task Adding_a_url_shows_the_converted_preview_and_retained_source_url()
+    {
+        const string url = "https://example.com/foundry";
+        var fetcher = new FakeUrlFetcher().WithHtml(url, ArticlePage);
+        var vm = new ResourcesViewModel(_projectId, UrlService(fetcher)) { DraftUrl = url };
+
+        await vm.AddUrlCommand.ExecuteAsync(null);
+
+        var row = Assert.Single(vm.Resources);
+        Assert.Equal("URL", row.TypeDisplay);
+        Assert.Same(row, vm.SelectedResource);
+        Assert.Contains("Global foundry capacity grew 12% in 2025.", vm.PreviewText);
+        // the retained source URL is shown for provenance
+        Assert.True(vm.HasSelectedSourceUri);
+        Assert.Equal(url, vm.SelectedSourceUri);
+        // no validation/fetch error, and the draft cleared
+        Assert.False(vm.HasUrlValidationError);
+        Assert.False(vm.HasUrlError);
+        Assert.Equal("", vm.DraftUrl);
+        Assert.False(vm.IsFetching);
+    }
+
+    // Scenario: A malformed URL is rejected — inline validation error, no resource created.
+    [Fact]
+    public async Task A_malformed_url_shows_an_inline_validation_error_and_creates_nothing()
+    {
+        var fetcher = new FakeUrlFetcher();
+        var vm = new ResourcesViewModel(_projectId, UrlService(fetcher)) { DraftUrl = "not-a-url" };
+
+        await vm.AddUrlCommand.ExecuteAsync(null);
+
+        Assert.True(vm.HasUrlValidationError);
+        Assert.False(string.IsNullOrWhiteSpace(vm.UrlValidationError));
+        Assert.Empty(vm.Resources);
+        Assert.Empty(_service.List(_projectId));
+    }
+
+    // Scenario: Fetch failures surface an actionable error and create no resource (view-model path).
+    [Fact]
+    public async Task A_fetch_failure_surfaces_an_error_and_creates_nothing()
+    {
+        const string url = "https://example.com/x";
+        var fetcher = new FakeUrlFetcher().WithResult(
+            url, new UrlFetchResult(UrlFetchOutcome.HttpError, 404, "text/html", "<html></html>"));
+        var vm = new ResourcesViewModel(_projectId, UrlService(fetcher)) { DraftUrl = url };
+
+        await vm.AddUrlCommand.ExecuteAsync(null);
+
+        Assert.True(vm.HasUrlError);
+        Assert.False(string.IsNullOrWhiteSpace(vm.UrlError));
+        Assert.Empty(vm.Resources);
+        Assert.Empty(_service.List(_projectId));
+        Assert.False(vm.IsFetching);
+    }
 }
+
