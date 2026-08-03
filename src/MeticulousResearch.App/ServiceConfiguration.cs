@@ -1,23 +1,54 @@
+using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.App.Theme;
 using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
+using MeticulousResearch.Core.Credentials;
+using MeticulousResearch.Core.Data;
+using MeticulousResearch.Core.Environment;
+using MeticulousResearch.Core.Projects;
+using MeticulousResearch.Core.Security;
+using MeticulousResearch.Core.Settings;
+using MeticulousResearch.Core.Theming;
+using MeticulousResearch.Core.Time;
 
 namespace MeticulousResearch.App;
 
 /// <summary>
-/// Composition root for the WPF shell: registers the navigation service, the shell, and every
-/// navigable view-model so no destination resolves to a placeholder (SPEC §1.3, §9.1(10)).
-/// Later features add their view-models here alongside a DataTemplate.
+/// Composition root for the WPF shell: registers persistence, secure credentials, app settings,
+/// theming, the project domain service, navigation, and every navigable view-model so no
+/// destination resolves to a placeholder (SPEC 1.3, 9.1(10)).
 /// </summary>
 public static class ServiceConfiguration
 {
-    /// <summary>Registers the shell, navigation, and all navigable view-models.</summary>
+    /// <summary>Registers persistence, credentials, theming, project services, and all view-models.</summary>
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
+        // Persistence + secure credentials + app settings (settings-secure-key/phase.md).
+        var dataDirectory = DefaultDataDirectory();
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddDataStore(dataDirectory);
+        services.AddSingleton<IEnvironment, SystemEnvironment>();
+        services.AddSingleton<ISecureKeyStore>(_ =>
+            new DpapiSecureKeyStore(System.IO.Path.Combine(dataDirectory, "credentials.dat")));
+        services.AddSingleton<ISettingsService>(sp => new SettingsService(sp.GetRequiredService<DataStore>()));
+        services.AddSingleton<IApiCredentialProvider, ApiCredentialProvider>();
+        services.AddSingleton<IDataDirectoryValidator, DataDirectoryValidator>();
+        services.AddSingleton(_ => new HttpClient());
+        services.AddSingleton<IKeyTester, KeyTester>();
+
+        // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
+        services.AddSingleton<IProjectService>(sp =>
+            new ProjectService(sp.GetRequiredService<DataStore>(), sp.GetRequiredService<ISettingsService>()));
+
+        // Design system and theming (design-system-theming/phase.md).
+        services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();
+        services.AddSingleton<IThemeStore>(_ => new JsonFileThemeStore(DefaultThemeSettingPath()));
+        services.AddSingleton<IThemeService, ThemeService>();
+
         // Navigation service resolves view-models through the container. String navigation
-        // parameters (e.g. a project id) are forwarded as constructor arguments so project-scoped
-        // view-models are built already scoped to their project.
+        // parameters (e.g. a project id) are forwarded as constructor arguments.
         services.AddSingleton<INavigationService>(sp => new NavigationService((type, parameters) =>
         {
             var ctorArgs = parameters
@@ -29,8 +60,7 @@ public static class ServiceConfiguration
 
         services.AddSingleton<ShellViewModel>();
 
-        // Navigable destinations. Transient because project-scoped ones are built per navigation
-        // with a project id; the home is cheap and stateless enough to be transient too.
+        // Navigable destinations.
         services.AddTransient<ProjectsHomeViewModel>();
         services.AddTransient<ProjectWorkspaceViewModel>();
         services.AddTransient<ConversationsViewModel>();
@@ -38,9 +68,24 @@ public static class ServiceConfiguration
         services.AddTransient<ArtifactsViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<ProjectSettingsViewModel>();
+        services.AddTransient<ThemeGalleryViewModel>();
+        services.AddTransient<SettingsViewModel>();
 
         services.AddSingleton<MainWindow>();
 
         return services;
     }
+
+    private static string DefaultDataDirectory()
+    {
+        return System.IO.Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "MeticulousResearch");
+    }
+
+    private static string DefaultThemeSettingPath()
+    {
+        return System.IO.Path.Combine(DefaultDataDirectory(), "theme.json");
+    }
 }
+
