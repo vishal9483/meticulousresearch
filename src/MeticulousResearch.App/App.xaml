@@ -5,6 +5,10 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Theme tokens (Light.xaml/Dark.xaml) are inserted at runtime by WpfThemeApplier
+                     so a live theme switch swaps a single dictionary. Control styles reference the
+                     tokens via DynamicResource. -->
+                <ResourceDictionary Source="Theme/Controls.xaml" />
                 <ResourceDictionary Source="Views/ViewLocator.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

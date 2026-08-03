@@ -15,4 +15,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = shellViewModel;
     }
+
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e) =>
+        (Application.Current as App)?.ToggleTheme();
 }

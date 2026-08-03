@@ -1,7 +1,7 @@
 ---
 name: worker
 description: Builds ONE MeticulousResearch feature end-to-end — faithfully translates its pre-written Gherkin into runnable xUnit tests, writes production code until the headless gate is green, then adversarially self-reviews its own work before committing to the feature branch. Returns a compact structured summary. Spawned once per feature by the orchestrator; keeps its own context scoped to a single feature.
-tools: ['run_in_terminal', 'read_file', 'file_search', 'grep_search', 'create_file', 'replace_string_in_file', 'multi_replace_string_in_file', 'get_errors', 'manage_todo_list']
+tools: [read, edit, search, execute, todo]
 model: Claude Opus 4.8 (copilot)
 ---
 

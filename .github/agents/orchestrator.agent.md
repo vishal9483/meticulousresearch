@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Autonomously builds MeticulousResearch milestone-by-milestone by walking the feature dependency DAG, delegating each feature to a fresh worker sub-agent, verifying the headless gate itself, and merging approved features into a moving integration branch. Designed to run for long stretches without human intervention while keeping its own context window small. Stops for human sign-off between milestones.
-tools: ['runSubagent', 'run_in_terminal', 'read_file', 'file_search', 'grep_search', 'memory', 'manage_todo_list', 'get_errors']
+tools: [agent, execute, read, search, todo]
 model: Claude Opus 4.8 (copilot)
 ---
 

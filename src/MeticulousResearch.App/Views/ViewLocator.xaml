@@ -15,6 +15,11 @@
         <views:ProjectWorkspaceView />
     </DataTemplate>
 
+    <!-- Design-system component gallery (renders the styled kit). -->
+    <DataTemplate DataType="{x:Type vm:ThemeGalleryViewModel}">
+        <views:ThemeGalleryView />
+    </DataTemplate>
+
     <!-- All project sections share the designed SectionView until later features specialize them. -->
     <DataTemplate DataType="{x:Type sections:ConversationsViewModel}">
         <views:SectionView />
