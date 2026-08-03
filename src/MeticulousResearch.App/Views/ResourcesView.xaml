@@ -110,7 +110,7 @@
                         <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" IsReadOnly="True" />
                         <DataGridTextColumn Header="Type" Binding="{Binding TypeDisplay}" Width="Auto" IsReadOnly="True" />
                         <DataGridTextColumn Header="Size" Binding="{Binding ByteSize}" Width="Auto" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Tokens" Binding="{Binding TokenEstimate}" Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Tokens (estimated)" Binding="{Binding TokenEstimateLabel}" Width="Auto" IsReadOnly="True" />
                         <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="Auto" IsReadOnly="False" />
                     </DataGrid.Columns>
                 </DataGrid>
