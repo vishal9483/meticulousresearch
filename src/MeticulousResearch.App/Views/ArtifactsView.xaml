@@ -20,6 +20,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
@@ -164,6 +165,49 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Branded export menu (SPEC §3.4.2, §9.1(6)): pick a format + preset, preview the branded
+             document, then confirm to save or cancel without writing a file. -->
+        <Border Grid.Row="5" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
+                AutomationProperties.AutomationId="BrandedExportBar"
+                Visibility="{Binding Export, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+            <StackPanel DataContext="{Binding Export}">
+                <Button Content="Branded export"
+                        HorizontalAlignment="Left"
+                        AutomationProperties.AutomationId="BrandedExportMenu"
+                        Command="{Binding OpenMenuCommand}" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0"
+                            Visibility="{Binding IsMenuOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ComboBox Width="140"
+                              AutomationProperties.AutomationId="BrandedExportFormatPicker"
+                              ItemsSource="{Binding Formats}"
+                              SelectedItem="{Binding SelectedFormat, Mode=TwoWay}" />
+                    <ComboBox Width="200" Margin="8,0,0,0"
+                              AutomationProperties.AutomationId="BrandedExportPresetPicker"
+                              ItemsSource="{Binding Presets}"
+                              SelectedItem="{Binding SelectedPreset, Mode=TwoWay}" />
+                    <Button Content="Preview" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="BrandedExportPreviewButton"
+                            Command="{Binding PreviewCommand}" />
+                </StackPanel>
+                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="BrandedExportPreview"
+                           Visibility="{Binding HasPreview, Converter={StaticResource BoolToVisibilityConverter}}"
+                           Text="{Binding PreviewSummary}" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0"
+                            Visibility="{Binding HasPreview, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Button Content="Save"
+                            AutomationProperties.AutomationId="BrandedExportConfirm"
+                            Command="{Binding SaveCommand}" />
+                    <Button Content="Cancel" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="BrandedExportCancel"
+                            Command="{Binding CancelCommand}" />
+                </StackPanel>
+                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#C00"
+                           AutomationProperties.AutomationId="BrandedExportError"
+                           Text="{Binding ErrorMessage}" />
             </StackPanel>
         </Border>
     </Grid>
