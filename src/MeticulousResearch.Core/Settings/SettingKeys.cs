@@ -21,6 +21,9 @@ public static class SettingKeys
     /// <summary>The persisted API base URL setting (env var wins over this at resolution time).</summary>
     public const string ApiBaseUrl = "api_base_url";
 
+    /// <summary>The selected generation backend (ai-gateway consumes this; default is the sidecar).</summary>
+    public const string ChatBackend = "chat_backend";
+
     /// <summary>The configured data directory.</summary>
     public const string DataDirectory = "data_directory";
 }

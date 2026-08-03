@@ -22,6 +22,9 @@ public sealed class SettingsService : ISettingsService
     /// <summary>The default context budget in tokens when none has been configured (SPEC §6).</summary>
     public const int DefaultContextBudgetValue = 150_000;
 
+    /// <summary>The default generation backend when none has been configured (SPEC §7.2): the sidecar.</summary>
+    public const string DefaultChatBackendValue = "sidecar";
+
     private readonly DataStore _store;
     private readonly Dictionary<string, string?> _values;
 
@@ -83,6 +86,13 @@ public sealed class SettingsService : ISettingsService
     {
         get => GetNullable(SettingKeys.DataDirectory);
         set => SetString(SettingKeys.DataDirectory, value);
+    }
+
+    /// <inheritdoc />
+    public string ChatBackend
+    {
+        get => GetString(SettingKeys.ChatBackend, DefaultChatBackendValue);
+        set => SetString(SettingKeys.ChatBackend, value);
     }
 
     private string GetString(string key, string fallback) =>
