@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Conversations;
+using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Settings;
 
@@ -40,13 +41,14 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
         string projectId,
         IProjectService? projects,
         IConversationService? conversations = null,
-        ISettingsService? settings = null)
+        ISettingsService? settings = null,
+        IModelCatalog? catalog = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
-            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings),
+            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog),
             [NavigationSection.Resources] = new ResourcesViewModel(projectId),
             [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId),
             [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects),

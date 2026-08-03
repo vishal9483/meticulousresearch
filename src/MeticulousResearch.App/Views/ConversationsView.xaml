@@ -23,7 +23,76 @@
         <StackPanel Grid.Row="0">
             <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
             <TextBlock Text="{Binding Headline}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#555" />
+
+            <!-- Model picker (model-selector, SPEC §6, §3.3): friendly tiers plus an "All models"
+                 expander, with an advisory vision warning + switch action. -->
+            <StackPanel x:Name="ModelPicker" Orientation="Horizontal" Margin="0,10,0,0"
+                        AutomationProperties.AutomationId="ModelPicker"
+                        DataContext="{Binding ModelPicker}">
+                <TextBlock Text="Model:" VerticalAlignment="Center" Foreground="#555" />
+                <TextBlock x:Name="CurrentModelLabel" Margin="6,0,0,0" VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           AutomationProperties.AutomationId="CurrentModelLabel"
+                           Text="{Binding CurrentModelLabel}" />
+
+                <ItemsControl x:Name="ModelTiers" Margin="12,0,0,0"
+                              AutomationProperties.AutomationId="ModelTiers"
+                              ItemsSource="{Binding Tiers}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Margin="4,0,0,0" Padding="10,4"
+                                    Content="{Binding Tier}"
+                                    AutomationProperties.Name="{Binding Tier}"
+                                    Command="{Binding DataContext.SelectModelCommand,
+                                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding Id}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Expander x:Name="AllModelsExpander" Margin="12,0,0,0" Header="All models"
+                          AutomationProperties.AutomationId="AllModelsExpander"
+                          AutomationProperties.Name="All models">
+                    <ItemsControl AutomationProperties.AutomationId="AllModelsList"
+                                  ItemsSource="{Binding AdditionalModels}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Margin="0,2" Padding="8,4"
+                                        HorizontalContentAlignment="Left"
+                                        Content="{Binding Name}"
+                                        AutomationProperties.Name="{Binding Name}"
+                                        Command="{Binding DataContext.SelectModelCommand,
+                                                  RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding Id}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Expander>
+            </StackPanel>
+
+            <!-- Advisory vision warning (SPEC §3.2.1): shown when a non-vision model is chosen with
+                 an image in scope; offers a one-click switch to a vision-capable model. -->
+            <Border x:Name="VisionWarning" Margin="0,8,0,0" Padding="10,6" CornerRadius="6"
+                    Background="#FFF4E5" BorderBrush="#F0C36D" BorderThickness="1"
+                    DataContext="{Binding ModelPicker}"
+                    AutomationProperties.AutomationId="VisionWarning"
+                    Visibility="{Binding HasVisionWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Foreground="#8A6D3B"
+                               Text="{Binding VisionWarning.Message}" TextWrapping="Wrap" />
+                    <Button Margin="10,0,0,0" Padding="10,4" Content="Switch model"
+                            AutomationProperties.AutomationId="SwitchModelButton"
+                            AutomationProperties.Name="Switch model"
+                            Command="{Binding SwitchToVisionModelCommand}" />
+                </StackPanel>
+            </Border>
         </StackPanel>
+
 
         <!-- Conversation thread -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
@@ -41,6 +110,13 @@
                                                Foreground="#555" />
                                     <TextBlock Text="{Binding Content}" Margin="0,4,0,0"
                                                TextWrapping="Wrap" />
+                                    <!-- Model that produced this assistant turn (model-selector, SPEC §3.3). -->
+                                    <TextBlock x:Name="TurnModelLabel" Margin="0,4,0,0"
+                                               FontSize="11" Foreground="#888"
+                                               AutomationProperties.AutomationId="TurnModelLabel"
+                                               AutomationProperties.Name="{Binding ModelLabel}"
+                                               Text="{Binding ModelLabel}"
+                                               Visibility="{Binding HasModel, Converter={StaticResource BoolToVisibilityConverter}}" />
                                 </StackPanel>
                             </Border>
                         </DataTemplate>

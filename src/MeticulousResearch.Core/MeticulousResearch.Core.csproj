@@ -13,4 +13,10 @@
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Shipped default model catalog (model-selector/phase.md, SPEC §6.3): loaded from the
+         assembly manifest so the built-in default is always available and deterministic in tests. -->
+    <EmbeddedResource Include="Models\default-model-catalog.json" />
+  </ItemGroup>
+
 </Project>
