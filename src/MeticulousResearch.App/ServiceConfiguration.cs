@@ -9,6 +9,7 @@ using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Ai.Backoff;
 using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
+using MeticulousResearch.Core.Backup;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Cost;
@@ -74,6 +75,12 @@ public static class ServiceConfiguration
         // serializer over the cost engine's per-turn priced rows — raw data, not a branded deliverable.
         services.AddSingleton<IUsageCsvExporter>(sp =>
             new UsageCsvExporter(sp.GetRequiredService<ICostService>()));
+
+        // Project backup & restore (backup-restore/phase.md, SPEC §8, §9.1(9)): snapshots a single
+        // project (DB subset + files + manifest) to a portable zip and restores it transactionally;
+        // never includes vault secrets or another project's rows.
+        services.AddSingleton<IProjectBackupService>(sp =>
+            new ProjectBackupService(sp.GetRequiredService<DataStore>()));
 
         // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
         services.AddSingleton<IProjectService>(sp =>
