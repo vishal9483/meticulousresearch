@@ -22,7 +22,7 @@ public sealed class DataStoreTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        NewStore().ClearConnectionPool();
         try
         {
             if (Directory.Exists(_dataDir))
@@ -387,7 +387,7 @@ public sealed class DataStoreTests : IDisposable
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
+            NewStore(custom).ClearConnectionPool();
             try { if (Directory.Exists(custom)) Directory.Delete(custom, true); } catch (IOException) { }
         }
     }

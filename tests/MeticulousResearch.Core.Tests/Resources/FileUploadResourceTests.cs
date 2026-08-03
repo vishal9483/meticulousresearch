@@ -41,8 +41,8 @@ public sealed class FileUploadResourceTests : IDisposable
 
     public void Dispose()
     {
+        _store.ClearConnectionPool();
         _store.Dispose();
-        SqliteConnection.ClearAllPools();
         try
         {
             var root = Directory.GetParent(_dataDir)!.FullName;

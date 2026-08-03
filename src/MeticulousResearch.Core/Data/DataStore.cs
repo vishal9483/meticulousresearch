@@ -140,6 +140,24 @@ public sealed class DataStore : IDisposable
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Clears the ADO.NET connection pool for <em>this store's</em> database only, releasing its
+    /// pooled connections and file handles so a temp database can be deleted. Unlike
+    /// <see cref="SqliteConnection.ClearAllPools"/>, this is scoped to this store's connection
+    /// string and will not dispose connections owned by other <see cref="DataStore"/> instances
+    /// running concurrently (e.g. parallel test classes).
+    /// </summary>
+    public void ClearConnectionPool()
+    {
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = DatabasePath,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Cache = SqliteCacheMode.Shared,
+        }.ToString();
+        SqliteConnection.ClearPool(new SqliteConnection(connectionString));
+    }
+
     /// <summary>No process-wide resources are held; pooled connections are released on dispose.</summary>
     public void Dispose()
     {
