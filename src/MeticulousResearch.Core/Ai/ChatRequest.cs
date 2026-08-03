@@ -1,3 +1,5 @@
+using MeticulousResearch.Core.Resources.Vision;
+
 namespace MeticulousResearch.Core.Ai;
 
 /// <summary>
@@ -22,6 +24,12 @@ public sealed record ChatRequest
 
     /// <summary>The new user message.</summary>
     public required string UserMessage { get; init; }
+
+    /// <summary>
+    /// The vision content blocks for images attached to the new user turn (image-attachments,
+    /// SPEC §3.2.1). Sent alongside <see cref="UserMessage"/>; empty when the turn has no images.
+    /// </summary>
+    public IReadOnlyList<ImageContentBlock> UserImages { get; init; } = Array.Empty<ImageContentBlock>();
 
     /// <summary>The resolved effective API key (env wins, else the secure store).</summary>
     public required string ApiKey { get; init; }

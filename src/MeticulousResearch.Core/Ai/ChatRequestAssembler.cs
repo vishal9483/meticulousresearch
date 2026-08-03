@@ -25,6 +25,7 @@ public sealed class ChatRequestAssembler
             Resources = context.Resources,
             History = context.History,
             UserMessage = context.UserMessage,
+            UserImages = context.UserImages,
             ApiKey = apiKey,
             BaseUrl = baseUrl,
         };

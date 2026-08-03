@@ -60,4 +60,25 @@ public interface IConversationService
         string model,
         IReadOnlyList<ChatResource>? resourceScope = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asks a question with per-turn image attachments (image-attachments, SPEC §3.2.1): identical
+    /// to <see cref="Ask(string,string,string,IReadOnlyList{ChatResource},CancellationToken)"/> but
+    /// the user turn also carries <paramref name="attachments"/>, which are stored as message content
+    /// (never as project resources) and emitted as vision content blocks alongside the text.
+    /// </summary>
+    /// <param name="conversationId">The conversation to ask in.</param>
+    /// <param name="message">The new user message.</param>
+    /// <param name="model">The model id to generate with.</param>
+    /// <param name="resourceScope">The resources in scope, or <c>null</c> to use the enabled scope.</param>
+    /// <param name="attachments">The images attached to this turn (may be null/empty).</param>
+    /// <param name="cancellationToken">Cancels the in-flight turn.</param>
+    /// <returns>The persisted assistant <see cref="Message"/>.</returns>
+    Task<Message> Ask(
+        string conversationId,
+        string message,
+        string model,
+        IReadOnlyList<ChatResource>? resourceScope,
+        IReadOnlyList<ImageAttachment>? attachments,
+        CancellationToken cancellationToken = default);
 }

@@ -35,6 +35,7 @@ public sealed class ConversationService : IConversationService
     private readonly IResourceService _resources;
     private readonly IClock _clock;
     private readonly ConversationGroundingAssembler _assembler;
+    private readonly IMessageAttachmentStore? _attachments;
 
     /// <summary>Creates the conversation service over its collaborators.</summary>
     public ConversationService(
@@ -55,6 +56,23 @@ public sealed class ConversationService : IConversationService
         IResourceService resources,
         IClock clock,
         ConversationGroundingAssembler assembler)
+        : this(store, chat, projects, resources, clock, assembler, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates the conversation service with an explicit grounding assembler and message-attachment
+    /// store (image-attachments): per-turn images are persisted through
+    /// <paramref name="attachmentStore"/> as message content, never as project resources.
+    /// </summary>
+    public ConversationService(
+        DataStore store,
+        IChatService chat,
+        IProjectService projects,
+        IResourceService resources,
+        IClock clock,
+        ConversationGroundingAssembler assembler,
+        IMessageAttachmentStore? attachmentStore)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _chat = chat ?? throw new ArgumentNullException(nameof(chat));
@@ -62,6 +80,7 @@ public sealed class ConversationService : IConversationService
         _resources = resources ?? throw new ArgumentNullException(nameof(resources));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
         _assembler = assembler ?? throw new ArgumentNullException(nameof(assembler));
+        _attachments = attachmentStore;
     }
 
     /// <inheritdoc />
@@ -130,11 +149,21 @@ public sealed class ConversationService : IConversationService
     }
 
     /// <inheritdoc />
-    public async Task<Message> Ask(
+    public Task<Message> Ask(
         string conversationId,
         string message,
         string model,
         IReadOnlyList<ChatResource>? resourceScope = null,
+        CancellationToken cancellationToken = default)
+        => Ask(conversationId, message, model, resourceScope, null, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<Message> Ask(
+        string conversationId,
+        string message,
+        string model,
+        IReadOnlyList<ChatResource>? resourceScope,
+        IReadOnlyList<ImageAttachment>? attachments,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(model))
@@ -164,7 +193,16 @@ public sealed class ConversationService : IConversationService
             db.SaveChanges();
         }
 
-        var context = _assembler.Assemble(project.CustomInstructions, model, message, scope, history);
+        // Store any image attachments as message content — never as project resources (§3.2.1).
+        if (attachments is { Count: > 0 })
+            _attachments?.Save(conversation.ProjectId, userMessage.Id, attachments);
+
+        var userImages = attachments is { Count: > 0 }
+            ? attachments.Select(a => a.ToContentBlock()).ToList()
+            : null;
+
+        var context = _assembler.Assemble(
+            project.CustomInstructions, model, message, scope, history, userImages);
 
         var start = _clock.UtcNow;
         var text = new System.Text.StringBuilder();

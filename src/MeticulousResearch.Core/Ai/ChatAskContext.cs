@@ -1,3 +1,5 @@
+using MeticulousResearch.Core.Resources.Vision;
+
 namespace MeticulousResearch.Core.Ai;
 
 /// <summary>
@@ -22,4 +24,10 @@ public sealed record ChatAskContext
 
     /// <summary>The prior turns of the conversation, oldest first.</summary>
     public IReadOnlyList<ChatHistoryMessage> History { get; init; } = Array.Empty<ChatHistoryMessage>();
+
+    /// <summary>
+    /// The images attached directly to the new user turn (image-attachments, SPEC §3.2.1), emitted
+    /// as vision content blocks alongside <see cref="UserMessage"/>. Empty when the turn has none.
+    /// </summary>
+    public IReadOnlyList<ImageContentBlock> UserImages { get; init; } = Array.Empty<ImageContentBlock>();
 }
