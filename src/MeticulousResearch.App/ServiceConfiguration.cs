@@ -29,7 +29,7 @@ using MeticulousResearch.Core.Templates;
 using MeticulousResearch.Core.Theming;
 using MeticulousResearch.Core.Time;
 using MeticulousResearch.Core.Turns;
-
+using MeticulousResearch.Core.ViewStates;
 namespace MeticulousResearch.App;
 
 /// <summary>
@@ -54,6 +54,13 @@ public static class ServiceConfiguration
         services.AddSingleton<IDataDirectoryValidator, DataDirectoryValidator>();
         services.AddSingleton(_ => new HttpClient());
         services.AddSingleton<IKeyTester, KeyTester>();
+
+        // Shared view-state error mapping (empty-loading-error-states/phase.md, SPEC §3.7): turns
+        // known failures and unexpected exceptions into human-readable, actionable errors while the
+        // raw detail is logged off-screen — never a raw stack trace in the UI.
+        services.AddSingleton<IErrorLog, TraceErrorLog>();
+        services.AddSingleton<IUserErrorMapper>(sp =>
+            new UserErrorMapper(sp.GetRequiredService<IErrorLog>()));
 
         // Model catalog (model-selector/phase.md, SPEC §6.3): the config-driven tier/id/price catalog
         // consumed by ai-gateway (model id) and cost-tracking (prices). Loads a user override JSON at
