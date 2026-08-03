@@ -1,0 +1,88 @@
+<UserControl x:Class="MeticulousResearch.App.Views.ReportCompositionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels.Sections"
+             d:DataContext="{d:DesignInstance vm:ReportCompositionViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+    <!-- Report composition view (SPEC §3.4.1, §4 screen 5c): an ordered list of section references
+         with drag-to-reorder, add/remove, pin-version, and empty-state guidance. -->
+    <Grid Margin="24" x:Name="ReportCompositionRoot"
+          AutomationProperties.AutomationId="ReportComposition">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Report composition" FontSize="24" FontWeight="SemiBold"
+                   Margin="0,0,0,16" />
+
+        <!-- Add an existing project artifact as a section. -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+            <ComboBox Width="280"
+                      ItemsSource="{Binding AvailableArtifacts}"
+                      DisplayMemberPath="Title"
+                      SelectedValuePath="Id"
+                      x:Name="AddSectionPicker"
+                      AutomationProperties.AutomationId="ReportCompositionAddSectionPicker" />
+            <Button Content="Add section" Margin="8,0,0,0"
+                    Command="{Binding AddSectionCommand}"
+                    CommandParameter="{Binding SelectedValue, ElementName=AddSectionPicker}"
+                    AutomationProperties.AutomationId="ReportCompositionAddSection" />
+        </StackPanel>
+
+        <!-- Empty-state guidance. -->
+        <TextBlock Grid.Row="2" Text="{Binding EmptyStateMessage}" TextWrapping="Wrap"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}"
+                   Opacity="0.7"
+                   AutomationProperties.AutomationId="ReportCompositionEmptyState" />
+
+        <!-- Ordered section list with drag-to-reorder controls. -->
+        <ListBox Grid.Row="2" ItemsSource="{Binding Sections}"
+                 Visibility="{Binding HasSections, Converter={StaticResource BoolToVisibility}}"
+                 x:Name="ReportCompositionSectionsList"
+                 AllowDrop="True"
+                 AutomationProperties.AutomationId="ReportCompositionSections">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,4" Padding="12" BorderThickness="1"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            AutomationProperties.AutomationId="ReportCompositionSection"
+                            AutomationProperties.Name="{Binding Title}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Title}" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       AutomationProperties.AutomationId="ReportCompositionSectionTitle" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Content="▲"
+                                        Command="{Binding DataContext.MoveUpCommand,
+                                                  RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding SectionId}"
+                                        AutomationProperties.AutomationId="ReportCompositionSectionMoveUp" />
+                                <Button Content="▼" Margin="4,0,0,0"
+                                        Command="{Binding DataContext.MoveDownCommand,
+                                                  RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding SectionId}"
+                                        AutomationProperties.AutomationId="ReportCompositionSectionMoveDown" />
+                                <Button Content="Remove" Margin="4,0,0,0"
+                                        Command="{Binding DataContext.RemoveSectionCommand,
+                                                  RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                        CommandParameter="{Binding SectionId}"
+                                        AutomationProperties.AutomationId="ReportCompositionSectionRemove" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>
