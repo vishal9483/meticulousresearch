@@ -20,6 +20,7 @@ using MeticulousResearch.Core.Resources.Url;
 using MeticulousResearch.Core.Search;
 using MeticulousResearch.Core.Security;
 using MeticulousResearch.Core.Settings;
+using MeticulousResearch.Core.Templates;
 using MeticulousResearch.Core.Theming;
 using MeticulousResearch.Core.Time;
 using MeticulousResearch.Core.Turns;
@@ -112,6 +113,21 @@ public static class ServiceConfiguration
             sp.GetRequiredService<DataStore>(),
             sp.GetRequiredService<IChatService>(),
             sp.GetRequiredService<IClock>()));
+
+        // Deliverable-template catalog + service (deliverable-templates/phase.md, SPEC §3.4.1):
+        // config-driven research templates (shipped default merged with a Settings override JSON)
+        // that drive artifact generation through IArtifactService.Generate with grounding-first
+        // prompting; also composes projects-crud creation for "new project from template".
+        services.AddSingleton<ITemplateCatalog>(_ =>
+            TemplateCatalogLoader.LoadFromFile(System.IO.Path.Combine(dataDirectory, "template-catalog.json")).Catalog);
+        services.AddSingleton<ITemplateService>(sp => new TemplateService(
+            sp.GetRequiredService<ITemplateCatalog>(),
+            sp.GetRequiredService<IArtifactService>(),
+            sp.GetRequiredService<IResourceService>(),
+            sp.GetRequiredService<IModelCatalog>(),
+            sp.GetRequiredService<IProjectService>()));
+        services.AddTransient<TemplateGalleryViewModel>(sp =>
+            new TemplateGalleryViewModel(sp.GetRequiredService<ITemplateCatalog>()));
 
         // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
         // overhead vs the selected model window (hard ceiling) and configured budget (soft), never

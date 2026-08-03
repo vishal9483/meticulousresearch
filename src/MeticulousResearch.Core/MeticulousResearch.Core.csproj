@@ -17,6 +17,9 @@
     <!-- Shipped default model catalog (model-selector/phase.md, SPEC §6.3): loaded from the
          assembly manifest so the built-in default is always available and deterministic in tests. -->
     <EmbeddedResource Include="Models\default-model-catalog.json" />
+    <!-- Shipped default deliverable-template catalog (deliverable-templates/phase.md, SPEC §3.4.1):
+         config-driven templates loaded from the manifest so the bundled set is deterministic. -->
+    <EmbeddedResource Include="Templates\default-template-catalog.json" />
   </ItemGroup>
 
 </Project>
