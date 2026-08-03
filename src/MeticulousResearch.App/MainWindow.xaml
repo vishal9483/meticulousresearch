@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MeticulousResearch.App"
         xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+        xmlns:views="clr-namespace:MeticulousResearch.App.Views"
         d:DataContext="{d:DesignInstance vm:ShellViewModel}"
         mc:Ignorable="d"
         Title="MeticulousResearch"
@@ -48,5 +49,14 @@
 
         <!-- Content region: the current view-model, resolved to a view via DataTemplates. -->
         <ContentControl Grid.Column="1" x:Name="ContentRegion" Content="{Binding CurrentViewModel}" />
+
+        <!-- Command palette overlay (command-palette-shortcuts, SPEC §3.5). Spans the whole
+             surface, dimming the app behind a centered palette. Toggled by Ctrl+K / Esc in
+             code-behind so focus can be trapped and restored. -->
+        <Grid x:Name="PaletteOverlay" Grid.Column="0" Grid.ColumnSpan="2"
+              AutomationProperties.AutomationId="CommandPaletteOverlay"
+              Background="#99000000" Visibility="Collapsed">
+            <views:CommandPaletteView x:Name="Palette" />
+        </Grid>
     </Grid>
 </Window>
