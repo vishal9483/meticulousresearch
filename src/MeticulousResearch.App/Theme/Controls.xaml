@@ -24,6 +24,23 @@
     <sys:Double x:Key="FontSizeSubtitle">18</sys:Double>
     <sys:Double x:Key="FontSizeTitle">24</sys:Double>
 
+    <!-- Shared keyboard focus adorner. A high-contrast dashed ring drawn from the theme focus
+         token so focus is clearly visible in both themes (accessibility/phase.md #3, SPEC §3.7).
+         Interactive control styles below reference this via FocusVisualStyle. -->
+    <Style x:Key="AppFocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle x:Name="FocusAdorner"
+                               Margin="-2" StrokeThickness="2" RadiusX="4" RadiusY="4"
+                               Stroke="{DynamicResource FocusIndicatorBrush}"
+                               StrokeDashArray="2 2" SnapsToDevicePixels="True"
+                               AutomationProperties.AutomationId="FocusAdorner" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Button: filled accent with a fully custom template (not the OS default appearance). -->
     <Style TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
@@ -34,6 +51,7 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource AppFocusVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -76,6 +94,7 @@
         <Setter Property="Padding" Value="8,6" />
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource AppFocusVisual}" />
         <Style.Triggers>
             <Trigger Property="IsKeyboardFocused" Value="True">
                 <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
@@ -92,6 +111,7 @@
         <Setter Property="Padding" Value="8,6" />
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource AppFocusVisual}" />
     </Style>
 
     <!-- DataGrid: themed surface, navy header, accent selection. -->

@@ -10,6 +10,9 @@
     <Color x:Key="SurfaceColor">#FFFFFF</Color>
     <Color x:Key="SurfaceVariantColor">#F3F4F6</Color>
     <Color x:Key="OnSurfaceColor">#1A1D21</Color>
+    <Color x:Key="PrimaryButtonFillColor">#1B2A4A</Color>
+    <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
+    <Color x:Key="FocusIndicatorColor">#2E5AAC</Color>
     <Color x:Key="SuccessColor">#1E7E34</Color>
     <Color x:Key="WarningColor">#8A5A00</Color>
     <Color x:Key="ErrorColor">#B3261E</Color>
@@ -25,5 +28,10 @@
 
     <!-- On-accent foreground for text drawn on the accent/navy fills. -->
     <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF" />
+
+    <!-- Accessibility: primary-button fill/text and the keyboard focus indicator (accessibility/phase.md). -->
+    <SolidColorBrush x:Key="PrimaryButtonFillBrush" Color="{StaticResource PrimaryButtonFillColor}" />
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}" />
+    <SolidColorBrush x:Key="FocusIndicatorBrush" Color="{StaticResource FocusIndicatorColor}" />
 
 </ResourceDictionary>
