@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore MeticulousResearch.sln
+
+      - name: Build
+        run: dotnet build MeticulousResearch.sln --configuration Release --no-restore
+
+      # @ui (FlaUI) and @manual scenarios need a real desktop session / a human, so they are
+      # excluded from the headless gate. The green bar is @unit + @integration.
+      - name: Test (unit + integration)
+        run: dotnet test MeticulousResearch.sln --configuration Release --no-build --filter "Category!=ui&Category!=manual" --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/*.trx'

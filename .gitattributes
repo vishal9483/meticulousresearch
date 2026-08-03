@@ -1,0 +1,16 @@
+# Normalize line endings: LF in the repo, checked out native on each platform.
+* text=auto
+
+# Windows-specific / VS files stay CRLF.
+*.sln       text eol=crlf
+*.csproj    text eol=crlf
+*.props     text eol=crlf
+*.targets   text eol=crlf
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.jpg binary
+*.docx binary
+*.pdf binary
+*.xlsx binary

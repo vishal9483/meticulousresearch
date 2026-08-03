@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Shared test doubles (fakes) consumed by all test projects. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MeticulousResearch.Core\MeticulousResearch.Core.csproj" />
+  </ItemGroup>
+
+</Project>

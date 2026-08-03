@@ -1,0 +1,133 @@
+<UserControl x:Class="MeticulousResearch.App.Views.ProjectsHomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+             d:DataContext="{d:DesignInstance vm:ProjectsHomeViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+    <Grid Margin="24" x:Name="ProjectsHomeRoot" AutomationProperties.AutomationId="ProjectsHomeRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Headline}" Margin="0,4,0,0" Foreground="#555" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- New-project form -->
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,16,0,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBox x:Name="NewProjectNameBox"
+                         AutomationProperties.AutomationId="NewProjectName"
+                         AutomationProperties.Name="New project name"
+                         Width="320" Padding="8,6" VerticalContentAlignment="Center"
+                         Text="{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}" />
+                <Button x:Name="CreateProjectButton"
+                        AutomationProperties.AutomationId="CreateProjectButton"
+                        Content="Create project" Margin="8,0,0,0" Padding="12,6"
+                        Command="{Binding CreateProjectCommand}" />
+            </StackPanel>
+            <TextBlock x:Name="ValidationError"
+                       AutomationProperties.AutomationId="NewProjectValidationError"
+                       Text="{Binding ValidationError}" Foreground="#C62828" Margin="0,6,0,0"
+                       Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+
+        <!-- Search + archived toggle -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,16,0,0">
+            <TextBox x:Name="SearchBox"
+                     AutomationProperties.AutomationId="ProjectSearch"
+                     AutomationProperties.Name="Search projects"
+                     Width="280" Padding="8,6" VerticalContentAlignment="Center"
+                     Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
+            <CheckBox x:Name="ShowArchivedToggle"
+                      AutomationProperties.AutomationId="ShowArchivedToggle"
+                      Content="Show archived" Margin="16,0,0,0" VerticalAlignment="Center"
+                      IsChecked="{Binding ShowArchived}" />
+        </StackPanel>
+
+        <!-- Project list + designed empty state -->
+        <Grid Grid.Row="3" Margin="0,16,0,0">
+            <!-- Empty state -->
+            <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                    x:Name="EmptyState"
+                    AutomationProperties.AutomationId="ProjectsEmptyState"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="No projects yet" FontSize="16" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Foreground="#555" />
+                    <TextBlock Text="{Binding EmptyStateCallToAction}" Margin="0,4,0,0"
+                               HorizontalAlignment="Center" Foreground="#777" />
+                </StackPanel>
+            </Border>
+
+            <!-- Cards -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasProjects, Converter={StaticResource BoolToVis}}">
+                <ItemsControl x:Name="ProjectsList" ItemsSource="{Binding Projects}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                                    Padding="12" Margin="0,0,0,8"
+                                    AutomationProperties.Name="{Binding Name}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
+                                        <TextBlock Text="{Binding Description}" Foreground="#777" Margin="0,2,0,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="Open" Padding="10,4" Margin="0,0,6,0"
+                                                Command="{Binding DataContext.OpenProjectCommand,
+                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding Id}" />
+                                        <Button Content="Delete" Padding="10,4"
+                                                AutomationProperties.AutomationId="DeleteProjectButton"
+                                                Command="{Binding DataContext.RequestDeleteProjectCommand,
+                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding Id}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Delete confirmation prompt (shown before anything is deleted) -->
+            <Border x:Name="DeleteConfirmation"
+                    AutomationProperties.AutomationId="DeleteConfirmation"
+                    Background="#FFFFFF" BorderBrush="#C62828" BorderThickness="1" CornerRadius="6"
+                    Padding="16" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Visibility="{Binding IsConfirmingDelete, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="Delete this project?" FontWeight="SemiBold" FontSize="15" />
+                    <TextBlock Text="{Binding PendingDeleteName}" Foreground="#777" Margin="0,4,0,0" />
+                    <TextBlock Text="This permanently removes the project and its files."
+                               Foreground="#777" Margin="0,2,0,12" TextWrapping="Wrap" MaxWidth="320" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel" Padding="12,6" Margin="0,0,8,0"
+                                AutomationProperties.AutomationId="CancelDeleteButton"
+                                Command="{Binding CancelDeleteCommand}" />
+                        <Button Content="Delete permanently" Padding="12,6"
+                                AutomationProperties.AutomationId="ConfirmDeleteButton"
+                                Command="{Binding ConfirmDeleteCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
