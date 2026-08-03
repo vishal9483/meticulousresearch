@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MeticulousResearch.TestSupport\MeticulousResearch.TestSupport.csproj" />
+    <ProjectReference Include="..\..\src\MeticulousResearch.Core\MeticulousResearch.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
