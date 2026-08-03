@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Conversations;
+using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Settings;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
@@ -17,7 +18,6 @@ namespace MeticulousResearch.App.ViewModels.Sections;
 public sealed partial class ConversationsViewModel : SectionViewModel
 {
     private readonly IConversationService? _conversations;
-    private readonly string _model;
     private string? _conversationId;
 
     /// <summary>
@@ -30,15 +30,25 @@ public sealed partial class ConversationsViewModel : SectionViewModel
 
     /// <summary>
     /// Builds the section wired to the conversation service (and app settings for the default
-    /// model). When <paramref name="conversations"/> is null the section is design-time only.
+    /// model). When <paramref name="conversations"/> is null the section is design-time only. The
+    /// model picker (model-selector) drives which model each turn is sent with and defaults to the
+    /// app/project default model.
     /// </summary>
-    public ConversationsViewModel(string projectId, IConversationService? conversations, ISettingsService? settings)
+    public ConversationsViewModel(
+        string projectId,
+        IConversationService? conversations,
+        ISettingsService? settings,
+        IModelCatalog? catalog = null)
         : base(projectId)
     {
         _conversations = conversations;
-        _model = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
+        var initialModel = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
+        ModelPicker = new ModelPickerViewModel(catalog ?? ModelCatalogLoader.Default, initialModel);
         Turns = new ReadOnlyObservableCollection<ConversationTurnViewModel>(_turns);
     }
+
+    /// <summary>The tiered model picker (model-selector) that selects the model for turns in this thread.</summary>
+    public ModelPickerViewModel ModelPicker { get; }
 
     /// <inheritdoc />
     public override NavigationSection Section => NavigationSection.Conversations;
@@ -85,8 +95,9 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         try
         {
             _conversationId ??= _conversations.Create(ProjectId).Id;
-            var assistant = await _conversations.Ask(_conversationId, text, _model).ConfigureAwait(true);
-            AppendTurn("assistant", assistant.Content);
+            var model = ModelPicker.ResolveForTurn();
+            var assistant = await _conversations.Ask(_conversationId, text, model).ConfigureAwait(true);
+            AppendTurn("assistant", assistant.Content, assistant.Model);
         }
         finally
         {
@@ -94,9 +105,9 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         }
     }
 
-    private void AppendTurn(string role, string content)
+    private void AppendTurn(string role, string content, string? model = null)
     {
-        _turns.Add(new ConversationTurnViewModel(role, content));
+        _turns.Add(new ConversationTurnViewModel(role, content, model));
         OnPropertyChanged(nameof(IsEmpty));
     }
 }

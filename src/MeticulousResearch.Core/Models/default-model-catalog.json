@@ -1,0 +1,15 @@
+{
+  "defaultModel": "claude-opus-5",
+  "tiers": [
+    { "tier": "Frontier", "name": "Claude Fable 5",   "id": "claude-fable-5",   "contextTokens": 1000000, "maxOutputTokens": 128000, "priceInputMTok": 10, "priceOutputMTok": 50, "vision": true },
+    { "tier": "Deep",     "name": "Claude Opus 5",     "id": "claude-opus-5",    "contextTokens": 1000000, "maxOutputTokens": 128000, "priceInputMTok": 5,  "priceOutputMTok": 25, "vision": true },
+    { "tier": "Balanced", "name": "Claude Sonnet 5",   "id": "claude-sonnet-5",  "contextTokens": 1000000, "maxOutputTokens": 128000, "priceInputMTok": 3,  "priceOutputMTok": 15, "vision": true },
+    { "tier": "Fast",     "name": "Claude Haiku 4.5",  "id": "claude-haiku-4-5", "contextTokens": 200000,  "maxOutputTokens": 64000,  "priceInputMTok": 1,  "priceOutputMTok": 5,  "vision": true }
+  ],
+  "additional": [
+    { "name": "Claude Opus 4.8",   "id": "claude-opus-4-8",   "contextTokens": 1000000, "maxOutputTokens": 128000, "priceInputMTok": 5, "priceOutputMTok": 25, "vision": true },
+    { "name": "Claude Opus 4.7",   "id": "claude-opus-4-7",   "contextTokens": 1000000, "maxOutputTokens": 128000, "priceInputMTok": 5, "priceOutputMTok": 25, "vision": true },
+    { "name": "Claude Sonnet 4.6", "id": "claude-sonnet-4-6", "contextTokens": 1000000, "maxOutputTokens": 128000, "priceInputMTok": 3, "priceOutputMTok": 15, "vision": true },
+    { "name": "Claude Sonnet 4.5", "id": "claude-sonnet-4-5", "contextTokens": 200000,  "maxOutputTokens": 64000,  "priceInputMTok": 3, "priceOutputMTok": 15, "vision": true }
+  ]
+}

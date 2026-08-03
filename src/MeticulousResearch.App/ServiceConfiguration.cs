@@ -10,6 +10,7 @@ using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
+using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Resources.Url;
@@ -43,6 +44,12 @@ public static class ServiceConfiguration
         services.AddSingleton<IDataDirectoryValidator, DataDirectoryValidator>();
         services.AddSingleton(_ => new HttpClient());
         services.AddSingleton<IKeyTester, KeyTester>();
+
+        // Model catalog (model-selector/phase.md, SPEC §6.3): the config-driven tier/id/price catalog
+        // consumed by ai-gateway (model id) and cost-tracking (prices). Loads a user override JSON at
+        // a known path under the data directory when present, else the shipped default.
+        services.AddSingleton<IModelCatalog>(_ =>
+            ModelCatalogLoader.LoadFromFile(System.IO.Path.Combine(dataDirectory, "model-catalog.json")).Catalog);
 
         // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
         services.AddSingleton<IProjectService>(sp =>
