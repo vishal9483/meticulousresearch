@@ -1,0 +1,118 @@
+{
+  "templates": [
+    {
+      "id": "market-research-report",
+      "name": "Market Research Report",
+      "description": "Flagship firm-quality market research report with sizing, forecast, competitive and regional analysis.",
+      "targetType": "doc",
+      "defaultModelTier": "Deep",
+      "sectionScaffold": [
+        "Executive summary",
+        "Market sizing & 10-yr forecast",
+        "Competitive landscape",
+        "Regional analysis",
+        "Methodology & sources"
+      ],
+      "generationPrompt": "Produce a firm-quality market research report on {scope} over the horizon {horizon} for the {region} market. Follow the section scaffold exactly and in order."
+    },
+    {
+      "id": "executive-summary-brief",
+      "name": "Executive Summary / Brief",
+      "description": "A concise executive brief distilling the key findings, implications, and recommendations.",
+      "targetType": "doc",
+      "defaultModelTier": "Balanced",
+      "sectionScaffold": [
+        "Key findings",
+        "Implications",
+        "Recommendations"
+      ],
+      "generationPrompt": "Write a concise executive summary brief on {scope} over {horizon} for the {region} market, distilling findings, implications, and recommendations."
+    },
+    {
+      "id": "competitive-landscape",
+      "name": "Competitive Landscape",
+      "description": "A structured competitor comparison table across positioning, share, strengths, and weaknesses.",
+      "targetType": "table",
+      "defaultModelTier": "Balanced",
+      "sectionScaffold": [
+        "Company",
+        "Positioning",
+        "Estimated share",
+        "Strengths",
+        "Weaknesses"
+      ],
+      "generationPrompt": "Build a competitive landscape comparison for {scope} over {horizon} in the {region} market as a table of competitors and their positioning, share, strengths, and weaknesses."
+    },
+    {
+      "id": "market-forecast-model",
+      "name": "Market Forecast Model",
+      "description": "A quantitative market forecast model laid out as a year-by-year projection table.",
+      "targetType": "table",
+      "defaultModelTier": "Deep",
+      "sectionScaffold": [
+        "Year",
+        "Market size",
+        "Growth rate",
+        "Key drivers"
+      ],
+      "generationPrompt": "Construct a market forecast model for {scope} over {horizon} in the {region} market as a year-by-year table of market size, growth rate, and key drivers."
+    },
+    {
+      "id": "swot-porters-five-forces",
+      "name": "SWOT / Porter's Five Forces",
+      "description": "A strategic analysis combining SWOT with Porter's Five Forces.",
+      "targetType": "doc",
+      "defaultModelTier": "Balanced",
+      "sectionScaffold": [
+        "Strengths",
+        "Weaknesses",
+        "Opportunities",
+        "Threats",
+        "Porter's Five Forces"
+      ],
+      "generationPrompt": "Perform a SWOT and Porter's Five Forces analysis of {scope} over {horizon} in the {region} market."
+    },
+    {
+      "id": "company-vendor-profile",
+      "name": "Company / Vendor Profile",
+      "description": "A structured profile of a company or vendor covering overview, offerings, and outlook.",
+      "targetType": "doc",
+      "defaultModelTier": "Balanced",
+      "sectionScaffold": [
+        "Overview",
+        "Products & services",
+        "Financials",
+        "Strategy & outlook"
+      ],
+      "generationPrompt": "Write a company/vendor profile for {scope} as of {horizon} in the {region} market, covering overview, offerings, financials, and outlook."
+    },
+    {
+      "id": "customer-buyer-insights",
+      "name": "Customer / Buyer Insights",
+      "description": "An analysis of buyer segments, needs, journey, and decision criteria.",
+      "targetType": "doc",
+      "defaultModelTier": "Balanced",
+      "sectionScaffold": [
+        "Buyer segments",
+        "Needs & pain points",
+        "Buying journey",
+        "Decision criteria"
+      ],
+      "generationPrompt": "Analyze customer/buyer insights for {scope} over {horizon} in the {region} market, covering segments, needs, journey, and decision criteria."
+    },
+    {
+      "id": "trend-technology-scan",
+      "name": "Trend / Technology Scan",
+      "description": "A scan of emerging trends and technologies with maturity and impact assessment.",
+      "targetType": "doc",
+      "defaultModelTier": "Balanced",
+      "sectionScaffold": [
+        "Emerging trends",
+        "Technology maturity",
+        "Impact assessment",
+        "Watch list"
+      ],
+      "generationPrompt": "Produce a trend and technology scan for {scope} over {horizon} in the {region} market, covering emerging trends, maturity, impact, and a watch list."
+    }
+  ]
+}

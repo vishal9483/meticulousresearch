@@ -20,6 +20,11 @@
         <views:ThemeGalleryView />
     </DataTemplate>
 
+    <!-- Deliverable-template gallery (New-artifact / New-project flows). -->
+    <DataTemplate DataType="{x:Type vm:TemplateGalleryViewModel}">
+        <views:TemplateGalleryView />
+    </DataTemplate>
+
     <!-- App-level Settings screen (secure key, endpoint, preferences, data directory). -->
     <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
         <views:SettingsView />
