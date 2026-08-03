@@ -41,8 +41,8 @@ public sealed class RateLimitBackoffNoLossTests : IDisposable
 
     public void Dispose()
     {
+        _store.ClearConnectionPool();
         _store.Dispose();
-        SqliteConnection.ClearAllPools();
         try
         {
             if (Directory.Exists(_dataDir))

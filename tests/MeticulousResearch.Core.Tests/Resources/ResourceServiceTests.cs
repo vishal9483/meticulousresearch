@@ -34,8 +34,8 @@ public sealed class ResourceServiceTests : IDisposable
 
     public void Dispose()
     {
+        _store.ClearConnectionPool();
         _store.Dispose();
-        SqliteConnection.ClearAllPools();
         try
         {
             if (Directory.Exists(_dataDir))
@@ -153,8 +153,8 @@ public sealed class ResourceServiceTests : IDisposable
         var resource = _service.AddText(_projectId, "Persisted", "Persisted text.");
 
         // When I close and reopen the project (a fresh store + service over the same data dir)
+        _store.ClearConnectionPool();
         _store.Dispose();
-        SqliteConnection.ClearAllPools();
         using var reopened = new DataStore(_clock, _dataDir);
         reopened.Initialize();
         var reopenedService = new ResourceService(reopened, new HeuristicTokenEstimator());

@@ -39,8 +39,8 @@ public sealed class ModelSelectionTests : IDisposable
 
     public void Dispose()
     {
+        _store.ClearConnectionPool();
         _store.Dispose();
-        SqliteConnection.ClearAllPools();
         try
         {
             if (Directory.Exists(_dataDir))
