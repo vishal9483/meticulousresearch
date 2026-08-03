@@ -1,0 +1,94 @@
+<UserControl x:Class="MeticulousResearch.App.Views.ResourcesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sections="clr-namespace:MeticulousResearch.App.ViewModels.Sections"
+             d:DataContext="{d:DesignInstance sections:ResourcesViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+    <!-- Resources center-pane view (SPEC §3.2): add-text entry, a table of resources, and a
+         preview pane for the selected resource's extracted text. Scrollable at narrow widths. -->
+    <Grid x:Name="ResourcesRoot" Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Headline}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#555" />
+        </StackPanel>
+
+        <!-- Add resource → Paste text -->
+        <Border Grid.Row="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                Padding="12" Margin="0,16,0,0">
+            <StackPanel>
+                <TextBlock Text="Add resource → Paste text" FontWeight="SemiBold" />
+                <TextBox x:Name="DraftTitleBox" Margin="0,8,0,0"
+                         AutomationProperties.AutomationId="ResourceTitleInput"
+                         Text="{Binding DraftTitle, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox x:Name="DraftTextBox" Margin="0,8,0,0" MinHeight="72"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         AutomationProperties.AutomationId="ResourceTextInput"
+                         Text="{Binding DraftText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock x:Name="ValidationError" Margin="0,8,0,0" Foreground="#C0392B"
+                           AutomationProperties.AutomationId="ResourceValidationError"
+                           Text="{Binding ValidationError}"
+                           Visibility="{Binding HasValidationError,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
+                <Button Content="Add pasted text" Margin="0,8,0,0" Padding="12,6"
+                        HorizontalAlignment="Left"
+                        AutomationProperties.AutomationId="AddPastedTextButton"
+                        Command="{Binding AddPastedTextCommand}" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Resources table -->
+            <Grid Grid.Column="0" Margin="0,0,8,0">
+                <DataGrid x:Name="ResourcesTable" ItemsSource="{Binding Resources}"
+                          SelectedItem="{Binding SelectedResource}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" CanUserAddRows="False"
+                          AutomationProperties.AutomationId="ResourcesTable">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Title" Binding="{Binding Title}" Width="*" />
+                        <DataGridTextColumn Header="Type" Binding="{Binding TypeDisplay}" Width="Auto" />
+                        <DataGridTextColumn Header="Size" Binding="{Binding ByteSize}" Width="Auto" />
+                        <DataGridTextColumn Header="Tokens" Binding="{Binding TokenEstimate}" Width="Auto" />
+                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="Auto" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Designed empty state for a project with no resources -->
+                <TextBlock Text="{Binding EmptyStateMessage}" Foreground="#999" TextWrapping="Wrap"
+                           VerticalAlignment="Top" Margin="4,8,0,0"
+                           AutomationProperties.AutomationId="ResourcesEmptyState"
+                           Visibility="{Binding IsEmpty,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
+            </Grid>
+
+            <!-- Preview pane -->
+            <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                    Padding="12" Margin="8,0,0,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Preview" FontWeight="SemiBold"
+                               Margin="0,0,0,8" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="PreviewPane" Text="{Binding PreviewText}" TextWrapping="Wrap"
+                                   AutomationProperties.AutomationId="ResourcePreview" />
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
