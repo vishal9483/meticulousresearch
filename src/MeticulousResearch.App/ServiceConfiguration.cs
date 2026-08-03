@@ -6,6 +6,7 @@ using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Budget;
+using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
@@ -90,6 +91,16 @@ public static class ServiceConfiguration
             new ContextBudgetService(
                 sp.GetRequiredService<IResourceService>(),
                 sp.GetRequiredService<ISettingsService>()));
+
+        // Conversation domain service (conversations/phase.md, SPEC §3.3/§5/§7.3): project-scoped
+        // grounded Q&A threads + message persistence, driving generation via IChatService.
+        services.AddSingleton<IConversationService>(sp =>
+            new ConversationService(
+                sp.GetRequiredService<DataStore>(),
+                sp.GetRequiredService<IChatService>(),
+                sp.GetRequiredService<IProjectService>(),
+                sp.GetRequiredService<IResourceService>(),
+                sp.GetRequiredService<IClock>()));
 
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();
