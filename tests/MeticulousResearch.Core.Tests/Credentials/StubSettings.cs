@@ -14,6 +14,7 @@ internal sealed class StubSettings : ISettingsService
     public bool TelemetryEnabled { get; set; }
     public string? ApiBaseUrl { get; set; }
     public string? DataDirectory { get; set; }
+    public string ChatBackend { get; set; } = SettingsService.DefaultChatBackendValue;
 
     public event EventHandler? SettingsChanged;
 

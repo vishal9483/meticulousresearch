@@ -28,6 +28,12 @@ public interface ISettingsService
     /// <summary>The configured data directory, or <c>null</c> when the default is used.</summary>
     string? DataDirectory { get; set; }
 
+    /// <summary>
+    /// The selected generation backend preference consumed by <c>ai-gateway</c>: <c>sidecar</c>
+    /// (the default) or <c>direct-api</c>. Resolved to a concrete backend by <c>IChatBackendFactory</c>.
+    /// </summary>
+    string ChatBackend { get; set; }
+
     /// <summary>Raised after any setting changes and is persisted.</summary>
     event EventHandler? SettingsChanged;
 }

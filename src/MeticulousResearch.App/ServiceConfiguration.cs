@@ -4,6 +4,7 @@ using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.Theme;
 using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
+using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
@@ -60,7 +61,29 @@ public static class ServiceConfiguration
         // FTS5 index/triggers owned by data-store-migrations, project-scoped and relevance-ranked.
         services.AddSingleton<ISearchService>(sp => new SearchService(sp.GetRequiredService<DataStore>()));
 
-        // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
+        // AI gateway (ai-gateway/phase.md, SPEC §7.1–§7.3): the single generation contract behind
+        // IChatService with a sidecar (primary) and direct-API (fallback) backend, selected in
+        // settings. Downstream M2 features consume only IChatService / IArtifactService.
+        services.AddSingleton<ChatRequestAssembler>();
+        services.AddSingleton<IDirectApiTransport>(sp =>
+            new HttpDirectApiTransport(sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton<ISidecarProcessFactory, NodeSidecarProcessFactory>();
+        services.AddSingleton<SidecarSupervisor>(sp =>
+            new SidecarSupervisor(sp.GetRequiredService<ISidecarProcessFactory>(), sp.GetRequiredService<IClock>()));
+        services.AddSingleton<DirectApiChatService>(sp => new DirectApiChatService(
+            sp.GetRequiredService<IApiCredentialProvider>(),
+            sp.GetRequiredService<ChatRequestAssembler>(),
+            sp.GetRequiredService<IDirectApiTransport>()));
+        services.AddSingleton<SidecarChatService>(sp => new SidecarChatService(
+            sp.GetRequiredService<IApiCredentialProvider>(),
+            sp.GetRequiredService<ChatRequestAssembler>(),
+            sp.GetRequiredService<SidecarSupervisor>()));
+        services.AddSingleton<IChatBackendFactory>(sp => new ChatBackendFactory(
+            sp.GetRequiredService<ISettingsService>(),
+            sp.GetRequiredService<SidecarChatService>,
+            sp.GetRequiredService<DirectApiChatService>));
+        services.AddSingleton<IChatService>(sp => sp.GetRequiredService<IChatBackendFactory>().Resolve());
+        services.AddSingleton<IArtifactService, NotImplementedArtifactService>();        // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
         // overhead vs the selected model window (hard ceiling) and configured budget (soft), never
         // truncating silently.
         services.AddSingleton<IContextBudgetService>(sp =>
