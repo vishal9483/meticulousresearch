@@ -43,7 +43,11 @@ public sealed class HttpDirectApiTransport : IDirectApiTransport
         {
             var (kind, retryable) = ChatErrorClassifier.FromStatusCode((int)response.StatusCode);
             yield return new ChatFaulted(kind, retryable,
-                $"The generation request failed ({(int)response.StatusCode}). Please try again.");
+                $"The generation request failed ({(int)response.StatusCode}). Please try again.")
+            {
+                // Honor the server's retry-after hint so rate-limit-backoff waits at least that long (SPEC §8).
+                RetryAfter = ReadRetryAfter(response),
+            };
             yield break;
         }
 
@@ -114,6 +118,22 @@ public sealed class HttpDirectApiTransport : IDirectApiTransport
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
             ? value.GetInt64()
             : 0;
+
+    /// <summary>Reads the <c>Retry-After</c> header (delta-seconds or HTTP-date) into a <see cref="TimeSpan"/>, if present.</summary>
+    private static TimeSpan? ReadRetryAfter(HttpResponseMessage response)
+    {
+        var retryAfter = response.Headers.RetryAfter;
+        if (retryAfter is null)
+            return null;
+        if (retryAfter.Delta is { } delta)
+            return delta < TimeSpan.Zero ? TimeSpan.Zero : delta;
+        if (retryAfter.Date is { } date)
+        {
+            var wait = date - DateTimeOffset.UtcNow;
+            return wait < TimeSpan.Zero ? TimeSpan.Zero : wait;
+        }
+        return null;
+    }
 
     private static string BuildBody(ChatRequest request)
     {

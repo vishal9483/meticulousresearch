@@ -223,6 +223,21 @@
                 </ItemsControl>
             </ScrollViewer>
 
+            <!-- "Retrying…" indicator (rate-limit-backoff, SPEC §8): a non-alarming, attempt-numbered
+                 banner shown while a rate-limited / transient turn is being retried; it is not an
+                 error dialog and never shows a raw status code. Clears on resolution. -->
+            <Border x:Name="RetryingIndicator" VerticalAlignment="Top" HorizontalAlignment="Stretch"
+                    Margin="0,0,0,8" Padding="10,6" CornerRadius="6"
+                    Background="#EAF3FF" BorderBrush="#9CC3F0" BorderThickness="1"
+                    DataContext="{Binding RetryStatus}"
+                    AutomationProperties.AutomationId="RetryingIndicator"
+                    AutomationProperties.Name="{Binding StatusText}"
+                    Visibility="{Binding IsRetrying, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock VerticalAlignment="Center" Foreground="#1F5FA8"
+                           AutomationProperties.AutomationId="RetryingIndicatorText"
+                           Text="{Binding StatusText}" TextWrapping="Wrap" />
+            </Border>
+
             <!-- Designed empty state, shown only when the thread has no turns -->
             <StackPanel x:Name="EmptyState"
                         AutomationProperties.AutomationId="ConversationEmptyState"
