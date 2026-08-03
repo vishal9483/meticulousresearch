@@ -2,7 +2,9 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.ViewModels.Sections;
+using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Projects;
+using MeticulousResearch.Core.Settings;
 
 namespace MeticulousResearch.App.ViewModels;
 
@@ -31,15 +33,20 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
     /// Builds a workspace for <paramref name="projectId"/>, wiring up the five section
     /// view-models. All are project-scoped; the Dashboard is selected by default. When a
     /// <paramref name="projects"/> service is supplied the Dashboard is populated with live
-    /// counts; otherwise sections render their designed defaults.
+    /// counts; otherwise sections render their designed defaults. A supplied
+    /// <paramref name="conversations"/> service backs the Conversations section's send flow.
     /// </summary>
-    public ProjectWorkspaceViewModel(string projectId, IProjectService? projects)
+    public ProjectWorkspaceViewModel(
+        string projectId,
+        IProjectService? projects,
+        IConversationService? conversations = null,
+        ISettingsService? settings = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
-            [NavigationSection.Conversations] = new ConversationsViewModel(projectId),
+            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings),
             [NavigationSection.Resources] = new ResourcesViewModel(projectId),
             [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId),
             [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects),
