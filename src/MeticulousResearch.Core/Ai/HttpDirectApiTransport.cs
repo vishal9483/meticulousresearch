@@ -147,7 +147,7 @@ public sealed class HttpDirectApiTransport : IDirectApiTransport
 
             var system = ComposeSystem(request);
             if (system.Length > 0)
-                writer.WriteString("system", system);
+                WriteSystem(writer, system, request.CacheBreakpoints.Count > 0);
 
             writer.WriteStartArray("messages");
             foreach (var turn in request.History)
@@ -174,6 +174,31 @@ public sealed class HttpDirectApiTransport : IDirectApiTransport
             builder.Append("# ").Append(resource.Title).Append('\n').Append(resource.Text);
         }
         return builder.ToString();
+    }
+
+    /// <summary>
+    /// Writes the composed system prompt (custom instructions + stable resource context). When the
+    /// request carries a cache breakpoint (prompt-caching, SPEC §8), the stable system block is emitted
+    /// as a structured content block terminated by an ephemeral <c>cache_control</c> marker so repeated
+    /// turns and regenerations reuse the cached input; otherwise it is sent as a plain string.
+    /// </summary>
+    private static void WriteSystem(Utf8JsonWriter writer, string system, bool cacheable)
+    {
+        if (!cacheable)
+        {
+            writer.WriteString("system", system);
+            return;
+        }
+
+        writer.WriteStartArray("system");
+        writer.WriteStartObject();
+        writer.WriteString("type", "text");
+        writer.WriteString("text", system);
+        writer.WriteStartObject("cache_control");
+        writer.WriteString("type", "ephemeral");
+        writer.WriteEndObject();
+        writer.WriteEndObject();
+        writer.WriteEndArray();
     }
 
     private static void WriteMessage(Utf8JsonWriter writer, string role, string content)
