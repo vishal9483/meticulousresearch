@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.Core.Cost;
+using MeticulousResearch.Core.Export;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
@@ -15,16 +17,19 @@ namespace MeticulousResearch.App.ViewModels.Sections;
 public sealed partial class ConsolidatedCostViewModel : ViewModelBase
 {
     private readonly ICostService _cost;
+    private readonly IUsageCsvExporter _csvExporter;
     private readonly string _projectId;
 
     /// <summary>Creates the panel view-model for <paramref name="projectId"/> and loads its figures.</summary>
     /// <param name="cost">The cost engine to read from.</param>
     /// <param name="projectId">The project whose spend is shown.</param>
+    /// <param name="csvExporter">The usage-CSV exporter (SPEC §9.1(7)); defaults to a serializer over <paramref name="cost"/>.</param>
     /// <exception cref="ArgumentNullException">A dependency is null.</exception>
-    public ConsolidatedCostViewModel(ICostService cost, string projectId)
+    public ConsolidatedCostViewModel(ICostService cost, string projectId, IUsageCsvExporter? csvExporter = null)
     {
         _cost = cost ?? throw new ArgumentNullException(nameof(cost));
         _projectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
+        _csvExporter = csvExporter ?? new UsageCsvExporter(cost);
         ByModel = new ObservableCollection<ModelSpend>();
         Load();
     }
@@ -55,6 +60,32 @@ public sealed partial class ConsolidatedCostViewModel : ViewModelBase
 
     /// <summary>Per-model spend for the by-model breakdown.</summary>
     public ObservableCollection<ModelSpend> ByModel { get; }
+
+    /// <summary>Whether the last <see cref="ExportUsageCsv"/> wrote a file (drives the confirmation).</summary>
+    [ObservableProperty]
+    private bool _csvExported;
+
+    /// <summary>The path the last usage CSV was written to, or null before any export.</summary>
+    [ObservableProperty]
+    private string? _lastCsvExportPath;
+
+    /// <summary>A confirmation message shown after a successful export (SPEC §9.1(7)).</summary>
+    public string ExportConfirmation => CsvExported ? $"Usage CSV exported to {LastCsvExportPath}" : "";
+
+    /// <summary>
+    /// Exports the project's per-turn usage as a CSV to <paramref name="destinationPath"/> (SPEC
+    /// §3.6, §9.1(7)) and raises a confirmation. Cost columns are recomputed from stored tokens at
+    /// current prices by the exporter's <see cref="IUsageCsvExporter"/>.
+    /// </summary>
+    /// <param name="destinationPath">The file path to write the usage CSV to.</param>
+    [RelayCommand]
+    private void ExportUsageCsv(string destinationPath)
+    {
+        _csvExporter.Export(_projectId, destinationPath);
+        LastCsvExportPath = destinationPath;
+        CsvExported = true;
+        OnPropertyChanged(nameof(ExportConfirmation));
+    }
 
     /// <summary>The total spend formatted for display (USD, 2 decimal places).</summary>
     public string TotalDisplay => Money(Total);
