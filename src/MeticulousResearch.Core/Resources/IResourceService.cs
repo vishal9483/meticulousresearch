@@ -60,6 +60,33 @@ public interface IResourceService
     /// <exception cref="Url.UrlResourceException">The page could not be fetched or had no readable content; no resource is created.</exception>
     Resource AddUrl(string projectId, string url);
 
+    /// <summary>
+    /// Adds an image resource understood via Claude's native vision (SPEC §3.2.1) — <b>no OCR/vision
+    /// library</b>. Validates the type (PNG/JPG/JPEG/GIF/WEBP; an unsupported type is rejected and no
+    /// resource is created), copies the original into the resource directory as
+    /// <c>original.{ext}</c>, records byte size and an image token estimate (from pixel dimensions),
+    /// and persists the row (type <c>image</c>, enabled, timestamped). No text is extracted at
+    /// add-time — text understanding is deferred to the model at request time. When caption-on-add is
+    /// enabled, one small vision call generates a short caption stored as the resource's extracted
+    /// text; a caption failure is non-fatal (the image is still created with empty extracted text) and
+    /// can be re-run later via <see cref="GenerateImageCaption"/>.
+    /// </summary>
+    /// <param name="projectId">Owning project id.</param>
+    /// <param name="filePath">Absolute path to the image being added.</param>
+    /// <returns>The saved <see cref="Resource"/>.</returns>
+    /// <exception cref="Vision.UnsupportedImageTypeException">The image type is not supported; no resource is created.</exception>
+    Resource AddImage(string projectId, string filePath);
+
+    /// <summary>
+    /// (Re)generates the cached caption for an image resource via one small vision call and stores it
+    /// as the resource's extracted text (SPEC §3.2.1). Used to caption an image whose caption-on-add
+    /// was disabled or failed. The image's stored original is unchanged.
+    /// </summary>
+    /// <param name="resourceId">The image resource to caption.</param>
+    /// <returns>The updated <see cref="Resource"/> with its new extracted (caption) text.</returns>
+    /// <exception cref="InvalidOperationException">No resource has the given id, or it is not an image.</exception>
+    Resource GenerateImageCaption(string resourceId);
+
     /// <summary>Returns the resource with the given id, or <c>null</c> if it does not exist.</summary>
     Resource? Get(string resourceId);
 

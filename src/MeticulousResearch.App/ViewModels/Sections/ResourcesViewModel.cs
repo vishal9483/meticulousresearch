@@ -4,6 +4,7 @@ using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Resources.Extraction;
 using MeticulousResearch.Core.Resources.Url;
+using MeticulousResearch.Core.Resources.Vision;
 using MeticulousResearch.Core.Search;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
@@ -143,6 +144,10 @@ public sealed partial class ResourcesViewModel : SectionViewModel
                 OnPropertyChanged(nameof(HasSelectedSourceUri));
                 OnPropertyChanged(nameof(SelectedMetadata));
                 OnPropertyChanged(nameof(CanReExtractSelected));
+                OnPropertyChanged(nameof(SelectedIsImage));
+                OnPropertyChanged(nameof(SelectedThumbnailPath));
+                OnPropertyChanged(nameof(HasThumbnail));
+                OnPropertyChanged(nameof(CanGenerateCaptionSelected));
             }
         }
     }
@@ -164,6 +169,21 @@ public sealed partial class ResourcesViewModel : SectionViewModel
         _selectedResource is null || _resources is null
             ? ""
             : _resources.GetExtractedText(_selectedResource.Id);
+
+    /// <summary>Whether the selected resource is an image (drives the thumbnail/caption preview).</summary>
+    public bool SelectedIsImage => _selectedResource?.StorageType == ResourceTypes.Image;
+
+    /// <summary>
+    /// The stored original path of the selected image resource, used as the preview thumbnail source;
+    /// empty when the selection is not an image.
+    /// </summary>
+    public string SelectedThumbnailPath =>
+        _selectedResource is null || _resources is null || !SelectedIsImage
+            ? ""
+            : _resources.Get(_selectedResource.Id)?.BlobPath ?? "";
+
+    /// <summary>Whether a thumbnail is available for the selected resource (an image with a stored original).</summary>
+    public bool HasThumbnail => !string.IsNullOrEmpty(SelectedThumbnailPath);
 
     private string _draftTitle = "";
 
@@ -306,6 +326,91 @@ public sealed partial class ResourcesViewModel : SectionViewModel
         }
     }
 
+    private string? _imageHint;
+
+    /// <summary>An inline message surfaced when an image add is rejected (unsupported type); null when none.</summary>
+    public string? ImageHint
+    {
+        get => _imageHint;
+        private set
+        {
+            if (SetProperty(ref _imageHint, value))
+                OnPropertyChanged(nameof(HasImageHint));
+        }
+    }
+
+    /// <summary>Whether an inline image add message is currently shown.</summary>
+    public bool HasImageHint => !string.IsNullOrEmpty(_imageHint);
+
+    /// <summary>
+    /// Adds image resources from the picked file paths (SPEC §3.2.1). Each supported image
+    /// (PNG/JPG/JPEG/GIF/WEBP) is stored as its original with no OCR; an unsupported type surfaces an
+    /// inline <see cref="ImageHint"/> and creates no resource. Successful adds insert a row at the top
+    /// and select it so its thumbnail and any cached caption show in the preview pane.
+    /// </summary>
+    [RelayCommand]
+    public async Task AddImagesAsync(IReadOnlyList<string>? filePaths)
+    {
+        if (_resources is null || filePaths is null || filePaths.Count == 0)
+            return;
+
+        ImageHint = null;
+        IsExtracting = true;
+        try
+        {
+            foreach (var path in filePaths)
+            {
+                Core.Data.Entities.Resource resource;
+                try
+                {
+                    resource = await Task.Run(() => _resources.AddImage(ProjectId, path)).ConfigureAwait(true);
+                }
+                catch (UnsupportedImageTypeException ex)
+                {
+                    ImageHint = ex.Message;
+                    continue;
+                }
+
+                var row = CreateRow(resource);
+                Resources.Insert(0, row);
+                OnPropertyChanged(nameof(IsEmpty));
+                OnPropertyChanged(nameof(EnabledTokenTotal));
+                SelectedResource = row;
+            }
+        }
+        finally
+        {
+            IsExtracting = false;
+        }
+    }
+
+    /// <summary>Whether caption generation is available for the current selection (an image).</summary>
+    public bool CanGenerateCaptionSelected => SelectedIsImage && _resources is not null;
+
+    /// <summary>
+    /// Generates and caches a short caption for the selected image via the vision seam
+    /// (<see cref="IImageCaptioner"/>), storing it as the resource's extracted text so it is findable
+    /// and previewable without resending the image (SPEC §3.2.1). Refreshes the preview on success.
+    /// </summary>
+    [RelayCommand]
+    public async Task GenerateCaptionSelectedAsync()
+    {
+        if (_resources is null || _selectedResource is null || !SelectedIsImage)
+            return;
+
+        var resourceId = _selectedResource.Id;
+        IsExtracting = true;
+        try
+        {
+            await Task.Run(() => _resources.GenerateImageCaption(resourceId)).ConfigureAwait(true);
+            OnPropertyChanged(nameof(PreviewText));
+        }
+        finally
+        {
+            IsExtracting = false;
+        }
+    }
+
     private string _draftUrl = "";
 
     /// <summary>The URL typed into the "Add resource → URL" entry.</summary>
@@ -314,7 +419,6 @@ public sealed partial class ResourcesViewModel : SectionViewModel
         get => _draftUrl;
         set => SetProperty(ref _draftUrl, value);
     }
-
     private string? _urlValidationError;
 
     /// <summary>Inline validation error surfaced when a malformed URL is entered; null when valid.</summary>
