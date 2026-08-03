@@ -1,0 +1,39 @@
+<UserControl x:Class="MeticulousResearch.App.Views.OnboardingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+             d:DataContext="{d:DesignInstance vm:OnboardingViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <!-- First-run onboarding wizard (onboarding/phase.md, SPEC §3.8). A branded, styled stepper;
+         the Welcome step states the local-first privacy posture and where data lives. -->
+    <Grid Background="{DynamicResource SurfaceBrush}"
+          x:Name="OnboardingRoot" AutomationProperties.AutomationId="OnboardingRoot">
+        <Border Padding="32" MaxWidth="640" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel>
+                <TextBlock Text="Welcome to MeticulousResearch" FontSize="26" FontWeight="SemiBold"
+                           AutomationProperties.AutomationId="WelcomeTitle" />
+                <TextBlock Margin="0,12,0,0" TextWrapping="Wrap"
+                           Text="Generate rigorous, source-grounded research documents with Claude."
+                           AutomationProperties.AutomationId="ProductIntro" />
+                <TextBlock Margin="0,16,0,0" TextWrapping="Wrap"
+                           Text="{Binding PrivacyStatement}"
+                           AutomationProperties.AutomationId="PrivacyStatement" />
+                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                           Text="{Binding DataLocationDescription}"
+                           AutomationProperties.AutomationId="DataLocation" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,28,0,0">
+                    <Button Content="Back" Command="{Binding BackCommand}" IsEnabled="{Binding CanGoBack}"
+                            AutomationProperties.AutomationId="OnboardingBackButton" />
+                    <Button Content="Next" Command="{Binding NextCommand}" Margin="8,0,0,0"
+                            IsEnabled="{Binding CanContinue}"
+                            AutomationProperties.AutomationId="OnboardingNextButton" />
+                    <Button Content="Skip" Command="{Binding SkipCommand}" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="OnboardingSkipButton" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

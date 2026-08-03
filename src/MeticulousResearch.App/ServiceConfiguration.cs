@@ -18,6 +18,7 @@ using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
 using MeticulousResearch.Core.Export;
 using MeticulousResearch.Core.Models;
+using MeticulousResearch.Core.Onboarding;
 using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Resources.Url;
@@ -85,6 +86,31 @@ public static class ServiceConfiguration
         // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
         services.AddSingleton<IProjectService>(sp =>
             new ProjectService(sp.GetRequiredService<DataStore>(), sp.GetRequiredService<ISettingsService>()));
+
+        // First-run onboarding (onboarding/phase.md, SPEC §3.8, §9.1(1)): the persisted completed
+        // flag/step, the bundled offline sample-project builder, first-run hint state, the wizard
+        // view-model, and the launch coordinator that shows the wizard on a clean install.
+        services.AddSingleton<IOnboardingState>(sp => new OnboardingState(sp.GetRequiredService<DataStore>()));
+        services.AddSingleton<ISampleProjectFactory>(sp => new SampleProjectFactory(
+            sp.GetRequiredService<IProjectService>(),
+            sp.GetRequiredService<IResourceService>(),
+            sp.GetRequiredService<IArtifactService>()));
+        services.AddSingleton<IFirstRunHints, FirstRunHints>();
+        services.AddTransient<OnboardingViewModel>(sp => new OnboardingViewModel(
+            sp.GetRequiredService<IOnboardingState>(),
+            sp.GetRequiredService<ISecureKeyStore>(),
+            sp.GetRequiredService<IApiCredentialProvider>(),
+            sp.GetRequiredService<IKeyTester>(),
+            sp.GetRequiredService<ISettingsService>(),
+            sp.GetRequiredService<IDataDirectoryValidator>(),
+            sp.GetRequiredService<ISampleProjectFactory>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IFirstRunHints>(),
+            dataDirectory));
+        services.AddSingleton<OnboardingCoordinator>(sp => new OnboardingCoordinator(
+            sp.GetRequiredService<IOnboardingState>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<OnboardingViewModel>));
 
         // Resource domain service (text-paste-resource/phase.md): text paste add/preview + token
         // estimate hook. Siblings extend the estimator and add file/URL/image resource types.

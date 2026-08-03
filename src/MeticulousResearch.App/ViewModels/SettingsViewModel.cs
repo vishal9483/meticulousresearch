@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.Core.Credentials;
+using MeticulousResearch.Core.Onboarding;
 using MeticulousResearch.Core.Security;
 using MeticulousResearch.Core.Settings;
 
@@ -20,6 +21,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settings;
     private readonly IKeyTester _keyTester;
     private readonly IDataDirectoryValidator _dataDirectoryValidator;
+    private readonly IOnboardingState? _onboardingState;
 
     /// <summary>Creates the Settings view-model over its Core services.</summary>
     public SettingsViewModel(
@@ -27,13 +29,15 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IApiCredentialProvider credentials,
         ISettingsService settings,
         IKeyTester keyTester,
-        IDataDirectoryValidator dataDirectoryValidator)
+        IDataDirectoryValidator dataDirectoryValidator,
+        IOnboardingState? onboardingState = null)
     {
         _keyStore = keyStore ?? throw new ArgumentNullException(nameof(keyStore));
         _credentials = credentials ?? throw new ArgumentNullException(nameof(credentials));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _keyTester = keyTester ?? throw new ArgumentNullException(nameof(keyTester));
         _dataDirectoryValidator = dataDirectoryValidator ?? throw new ArgumentNullException(nameof(dataDirectoryValidator));
+        _onboardingState = onboardingState;
 
         // Base URL: when the environment overrides it, show the effective value read-only.
         IsBaseUrlEnvironmentProvided = _credentials.IsBaseUrlFromEnvironment;
@@ -193,5 +197,21 @@ public sealed partial class SettingsViewModel : ViewModelBase
         DataDirectoryError = null;
         _settings.DataDirectory = DataDirectory;
         return true;
+    }
+
+    // --- Re-run onboarding ---
+
+    /// <summary>Raised when the user asks to re-run first-run onboarding, so the shell can relaunch it.</summary>
+    public event EventHandler? RerunOnboardingRequested;
+
+    /// <summary>
+    /// Clears the onboarding completed flag and step and asks the shell to relaunch the wizard from
+    /// the Welcome step (onboarding/phase.md — re-run entry point, SPEC §3.8).
+    /// </summary>
+    [RelayCommand]
+    public void RerunOnboarding()
+    {
+        _onboardingState?.Reset();
+        RerunOnboardingRequested?.Invoke(this, EventArgs.Empty);
     }
 }
