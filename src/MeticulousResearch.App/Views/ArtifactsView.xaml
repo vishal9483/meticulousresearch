@@ -10,13 +10,15 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </UserControl.Resources>
     <!-- Artifacts center-pane view (SPEC §3.4): the list of the project's deliverables, a "New
-         artifact" entry point, and a designed empty state when the project has no artifacts yet. -->
+         artifact" entry point, a designed empty state when the project has no artifacts yet, and
+         the editor's diff mode (two version pickers, side-by-side / inline, highlighted changes). -->
     <Grid x:Name="ArtifactsRoot" Margin="24"
           AutomationProperties.AutomationId="ArtifactsRoot">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
@@ -52,5 +54,87 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- Diff mode (SPEC §3.4): appears when an artifact is selected. Two version pickers,
+             side-by-side / inline toggle, highlighted changes, and a disabled hint when only one
+             version exists. -->
+        <Border Grid.Row="3" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
+                AutomationProperties.AutomationId="ArtifactDiffPanel"
+                Visibility="{Binding Diff, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+            <StackPanel DataContext="{Binding Diff}">
+                <!-- Disabled hint (single version). -->
+                <TextBlock AutomationProperties.AutomationId="DiffDisabledHint"
+                           Text="{Binding DisabledHint}"
+                           TextWrapping="Wrap" Foreground="#999"
+                           Visibility="{Binding IsDisabled, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <!-- Diff controls + presentation (two or more versions). -->
+                <StackPanel Visibility="{Binding IsAvailable, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Base" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <ComboBox Width="220"
+                                  AutomationProperties.AutomationId="DiffBasePicker"
+                                  ItemsSource="{Binding Versions}"
+                                  SelectedItem="{Binding BaseVersion, Mode=TwoWay}"
+                                  DisplayMemberPath="VersionNo" />
+                        <TextBlock Text="Compare" VerticalAlignment="Center" Margin="16,0,6,0" />
+                        <ComboBox Width="220"
+                                  AutomationProperties.AutomationId="DiffComparePicker"
+                                  ItemsSource="{Binding Versions}"
+                                  SelectedItem="{Binding CompareVersion, Mode=TwoWay}"
+                                  DisplayMemberPath="VersionNo" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Side by side" Margin="0,0,8,0"
+                                AutomationProperties.AutomationId="DiffSideBySideButton"
+                                Command="{Binding ShowSideBySideCommand}" />
+                        <Button Content="Inline"
+                                AutomationProperties.AutomationId="DiffInlineButton"
+                                Command="{Binding ShowInlineCommand}" />
+                    </StackPanel>
+
+                    <!-- Side-by-side presentation: base left, compare right. -->
+                    <Grid Margin="0,12,0,0"
+                          AutomationProperties.AutomationId="DiffSideBySideView"
+                          Visibility="{Binding IsSideBySide, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ItemsControl Grid.Column="0" Margin="0,0,6,0"
+                                      AutomationProperties.AutomationId="DiffLeftPane"
+                                      ItemsSource="{Binding LeftSegments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <ItemsControl Grid.Column="1" Margin="6,0,0,0"
+                                      AutomationProperties.AutomationId="DiffRightPane"
+                                      ItemsSource="{Binding RightSegments}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+
+                    <!-- Inline presentation: merged single pane. -->
+                    <ItemsControl Margin="0,12,0,0"
+                                  AutomationProperties.AutomationId="DiffInlineView"
+                                  ItemsSource="{Binding InlineSegments}"
+                                  Visibility="{Binding IsInline, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

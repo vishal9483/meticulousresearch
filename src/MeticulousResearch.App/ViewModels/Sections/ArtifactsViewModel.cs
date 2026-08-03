@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Artifacts;
+using MeticulousResearch.Core.Artifacts.Diff;
 using MeticulousResearch.Core.Data.Entities;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
@@ -16,6 +17,7 @@ namespace MeticulousResearch.App.ViewModels.Sections;
 public sealed partial class ArtifactsViewModel : SectionViewModel
 {
     private readonly IArtifactService? _artifacts;
+    private readonly IArtifactDiffService? _diffService;
 
     /// <summary>Designed empty-state message shown when the project has no artifacts yet.</summary>
     public const string EmptyStateMessage =
@@ -25,9 +27,15 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     public ArtifactsViewModel(string projectId) : this(projectId, null) { }
 
     /// <summary>Creates the Artifacts section wired to the artifact domain service.</summary>
-    public ArtifactsViewModel(string projectId, IArtifactService? artifacts) : base(projectId)
+    public ArtifactsViewModel(string projectId, IArtifactService? artifacts)
+        : this(projectId, artifacts, null) { }
+
+    /// <summary>Creates the Artifacts section wired to the artifact domain and diff services.</summary>
+    public ArtifactsViewModel(string projectId, IArtifactService? artifacts, IArtifactDiffService? diffService)
+        : base(projectId)
     {
         _artifacts = artifacts;
+        _diffService = diffService;
         Artifacts = new ObservableCollection<ArtifactRowViewModel>();
         Artifacts.CollectionChanged += (_, _) =>
         {
@@ -61,7 +69,35 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     public ArtifactRowViewModel? SelectedArtifact
     {
         get => _selectedArtifact;
-        set => SetProperty(ref _selectedArtifact, value);
+        set
+        {
+            if (SetProperty(ref _selectedArtifact, value))
+                BuildDiff();
+        }
+    }
+
+    private ArtifactDiffViewModel? _diff;
+
+    /// <summary>
+    /// The diff-mode view-model for the selected artifact (SPEC §3.4), or null when no artifact is
+    /// selected or the diff service is unavailable. Defaults to previous-vs-current and is disabled
+    /// when the artifact has a single version.
+    /// </summary>
+    public ArtifactDiffViewModel? Diff
+    {
+        get => _diff;
+        private set => SetProperty(ref _diff, value);
+    }
+
+    private void BuildDiff()
+    {
+        if (_artifacts is null || _diffService is null || _selectedArtifact is null)
+        {
+            Diff = null;
+            return;
+        }
+
+        Diff = new ArtifactDiffViewModel(_artifacts.GetHistory(_selectedArtifact.Id), _diffService);
     }
 
     /// <inheritdoc />
