@@ -33,7 +33,7 @@
         <views:ResourcesView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type sections:ArtifactsViewModel}">
-        <views:SectionView />
+        <views:ArtifactsView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type sections:DashboardViewModel}">
         <views:DashboardView />

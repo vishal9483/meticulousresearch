@@ -7,6 +7,7 @@ using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Ai.Backoff;
+using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Credentials;
@@ -107,7 +108,12 @@ public static class ServiceConfiguration
             new BackoffPolicy(TimeSpan.FromSeconds(1), maxAttempts: 5, sp.GetRequiredService<IJitterSource>()),
             sp.GetRequiredService<IRetryDelay>(),
             sp.GetRequiredService<IRetryObserver>()));
-        services.AddSingleton<IArtifactService, NotImplementedArtifactService>();        // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
+        services.AddSingleton<IArtifactService>(sp => new ArtifactService(
+            sp.GetRequiredService<DataStore>(),
+            sp.GetRequiredService<IChatService>(),
+            sp.GetRequiredService<IClock>()));
+
+        // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
         // overhead vs the selected model window (hard ceiling) and configured budget (soft), never
         // truncating silently.
         services.AddSingleton<IContextBudgetService>(sp =>
