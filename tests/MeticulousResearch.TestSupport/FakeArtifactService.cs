@@ -1,4 +1,6 @@
 using MeticulousResearch.Core.Ai;
+using MeticulousResearch.Core.Artifacts;
+using MeticulousResearch.Core.Data.Entities;
 
 namespace MeticulousResearch.TestSupport;
 
@@ -73,4 +75,35 @@ public sealed class FakeArtifactService : IArtifactService
         _versions.TryGetValue(artifactId, out var list)
             ? list.OrderBy(v => v.Version).ToList()
             : Array.Empty<StoredVersion>();
+
+    private const string DomainOwner =
+        "The artifact domain surface is realized by ArtifactService (artifact-creation); this fake only simulates emit/update for the built-in tools.";
+
+    /// <inheritdoc />
+    public Artifact Create(string projectId, string type, string title) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Artifact CreateFromContent(
+        string projectId, string type, string title, string content, string? contentFormat,
+        ArtifactProvenance provenance) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Task<Artifact> Generate(
+        string projectId, GenerateArtifactRequest request, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Artifact PromoteTurn(string turnId, string title) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public ArtifactVersion SetContent(string artifactId, string content) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Artifact? Get(string artifactId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public IReadOnlyList<Artifact> List(string projectId) => throw new NotSupportedException(DomainOwner);
+
+    /// <inheritdoc />
+    public Artifact Rename(string artifactId, string newTitle) => throw new NotSupportedException(DomainOwner);
 }

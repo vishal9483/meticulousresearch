@@ -1,0 +1,56 @@
+<UserControl x:Class="MeticulousResearch.App.Views.ArtifactsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sections="clr-namespace:MeticulousResearch.App.ViewModels.Sections"
+             d:DataContext="{d:DesignInstance sections:ArtifactsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+    <!-- Artifacts center-pane view (SPEC §3.4): the list of the project's deliverables, a "New
+         artifact" entry point, and a designed empty state when the project has no artifacts yet. -->
+    <Grid x:Name="ArtifactsRoot" Margin="24"
+          AutomationProperties.AutomationId="ArtifactsRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Headline}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#555" />
+        </StackPanel>
+
+        <Button Grid.Row="1" Content="New artifact" Padding="12,6" Margin="0,16,0,0"
+                HorizontalAlignment="Left"
+                AutomationProperties.AutomationId="NewArtifactButton"
+                Command="{Binding NewArtifactCommand}" />
+
+        <!-- Designed empty state. -->
+        <StackPanel Grid.Row="2" Margin="0,24,0,0" VerticalAlignment="Top"
+                    AutomationProperties.AutomationId="ArtifactsEmptyState"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock Text="{x:Static sections:ArtifactsViewModel.EmptyStateMessage}"
+                       TextWrapping="Wrap" Foreground="#777" />
+        </StackPanel>
+
+        <!-- Artifact list. -->
+        <ListBox Grid.Row="2" Margin="0,16,0,0"
+                 AutomationProperties.AutomationId="ArtifactsList"
+                 ItemsSource="{Binding Artifacts}"
+                 SelectedItem="{Binding SelectedArtifact, Mode=TwoWay}"
+                 Visibility="{Binding HasArtifacts, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Type}" Margin="8,0,0,0" Foreground="#888" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>
