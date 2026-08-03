@@ -9,6 +9,7 @@ using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
 using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Resources;
+using MeticulousResearch.Core.Resources.Url;
 using MeticulousResearch.Core.Security;
 using MeticulousResearch.Core.Settings;
 using MeticulousResearch.Core.Theming;
@@ -46,8 +47,12 @@ public static class ServiceConfiguration
         // Resource domain service (text-paste-resource/phase.md): text paste add/preview + token
         // estimate hook. Siblings extend the estimator and add file/URL/image resource types.
         services.AddSingleton<ITokenEstimator, HeuristicTokenEstimator>();
+        services.AddSingleton<IUrlFetcher>(sp => new HttpUrlFetcher(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton<IResourceService>(sp =>
-            new ResourceService(sp.GetRequiredService<DataStore>(), sp.GetRequiredService<ITokenEstimator>()));
+            new ResourceService(
+                sp.GetRequiredService<DataStore>(),
+                sp.GetRequiredService<ITokenEstimator>(),
+                sp.GetRequiredService<IUrlFetcher>()));
 
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();

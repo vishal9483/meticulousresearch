@@ -43,6 +43,23 @@ public interface IResourceService
     /// <exception cref="UnsupportedFileTypeException">The file's type is not supported; no resource is created.</exception>
     FileExtractionResult AddFile(string projectId, string filePath);
 
+    /// <summary>
+    /// Adds a URL resource (SPEC §3.2): validates the URL, fetches the page once at add-time,
+    /// extracts its main readable content and converts it to markdown (stripping navigation/ad
+    /// boilerplate), writes that markdown to <c>extracted.txt</c>, stores the raw fetched HTML as the
+    /// original blob, retains the exact original URL in <c>source_uri</c>, defaults the title to the
+    /// page title, and records byte size and token estimate. Because conversion happens at add-time,
+    /// preview and grounding work offline afterward. A malformed URL, a fetch failure
+    /// (connection/timeout/HTTP error), or a page with no readable content produces an actionable
+    /// error and creates no resource (SPEC §3.7).
+    /// </summary>
+    /// <param name="projectId">Owning project id.</param>
+    /// <param name="url">The absolute http/https URL to fetch and convert.</param>
+    /// <returns>The saved <see cref="Resource"/> (type <c>url</c>, enabled, timestamped).</returns>
+    /// <exception cref="ArgumentException">The URL is missing or malformed; no resource is created.</exception>
+    /// <exception cref="Url.UrlResourceException">The page could not be fetched or had no readable content; no resource is created.</exception>
+    Resource AddUrl(string projectId, string url);
+
     /// <summary>Returns the resource with the given id, or <c>null</c> if it does not exist.</summary>
     Resource? Get(string resourceId);
 

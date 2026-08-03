@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Resources.Extraction;
+using MeticulousResearch.Core.Resources.Url;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
@@ -64,12 +65,23 @@ public sealed partial class ResourcesViewModel : SectionViewModel
             {
                 OnPropertyChanged(nameof(PreviewText));
                 OnPropertyChanged(nameof(HasSelection));
+                OnPropertyChanged(nameof(SelectedSourceUri));
+                OnPropertyChanged(nameof(HasSelectedSourceUri));
             }
         }
     }
 
     /// <summary>Whether a resource is selected (drives the preview pane's visibility).</summary>
     public bool HasSelection => _selectedResource is not null;
+
+    /// <summary>
+    /// The selected resource's retained source URL/path shown in the preview pane for provenance
+    /// (e.g. the original URL of a URL resource); empty when none.
+    /// </summary>
+    public string SelectedSourceUri => _selectedResource?.SourceUri ?? "";
+
+    /// <summary>Whether the selected resource has a source URL to show for provenance.</summary>
+    public bool HasSelectedSourceUri => !string.IsNullOrEmpty(_selectedResource?.SourceUri);
 
     /// <summary>The extracted text of the selected resource, shown in the preview pane.</summary>
     public string PreviewText =>
@@ -213,6 +225,111 @@ public sealed partial class ResourcesViewModel : SectionViewModel
         finally
         {
             IsExtracting = false;
+        }
+    }
+
+    private string _draftUrl = "";
+
+    /// <summary>The URL typed into the "Add resource → URL" entry.</summary>
+    public string DraftUrl
+    {
+        get => _draftUrl;
+        set => SetProperty(ref _draftUrl, value);
+    }
+
+    private string? _urlValidationError;
+
+    /// <summary>Inline validation error surfaced when a malformed URL is entered; null when valid.</summary>
+    public string? UrlValidationError
+    {
+        get => _urlValidationError;
+        private set
+        {
+            if (SetProperty(ref _urlValidationError, value))
+                OnPropertyChanged(nameof(HasUrlValidationError));
+        }
+    }
+
+    /// <summary>Whether an inline URL validation error is currently shown.</summary>
+    public bool HasUrlValidationError => !string.IsNullOrEmpty(_urlValidationError);
+
+    private string? _urlError;
+
+    /// <summary>A human-readable fetch/empty-content error surfaced after an add attempt; null when none.</summary>
+    public string? UrlError
+    {
+        get => _urlError;
+        private set
+        {
+            if (SetProperty(ref _urlError, value))
+                OnPropertyChanged(nameof(HasUrlError));
+        }
+    }
+
+    /// <summary>Whether a URL fetch error is currently shown.</summary>
+    public bool HasUrlError => !string.IsNullOrEmpty(_urlError);
+
+    private bool _isFetching;
+
+    /// <summary>Whether a URL fetch/convert is currently running (drives the fetching indicator).</summary>
+    public bool IsFetching
+    {
+        get => _isFetching;
+        private set => SetProperty(ref _isFetching, value);
+    }
+
+    /// <summary>
+    /// Adds a URL resource from <see cref="DraftUrl"/> (SPEC §3.2). A malformed URL is rejected with
+    /// an inline <see cref="UrlValidationError"/> and no resource is created. Otherwise the page is
+    /// fetched and converted off the UI thread with <see cref="IsFetching"/> driving a progress
+    /// indicator; a fetch failure or empty-content page surfaces a human-readable
+    /// <see cref="UrlError"/> and creates no resource, while success inserts the new row at the top,
+    /// selects it so its converted preview and retained source URL show, and clears the draft.
+    /// </summary>
+    [RelayCommand]
+    public async Task AddUrlAsync()
+    {
+        UrlValidationError = null;
+        UrlError = null;
+
+        if (string.IsNullOrWhiteSpace(DraftUrl))
+        {
+            UrlValidationError = "Enter a URL to add.";
+            return;
+        }
+
+        if (_resources is null)
+            return;
+
+        var url = DraftUrl;
+        IsFetching = true;
+        try
+        {
+            Core.Data.Entities.Resource resource;
+            try
+            {
+                resource = await Task.Run(() => _resources.AddUrl(ProjectId, url)).ConfigureAwait(true);
+            }
+            catch (ArgumentException)
+            {
+                UrlValidationError = "That doesn't look like a valid URL. Enter a full http(s) address.";
+                return;
+            }
+            catch (UrlResourceException ex)
+            {
+                UrlError = ex.Message;
+                return;
+            }
+
+            var row = new ResourceRowViewModel(resource);
+            Resources.Insert(0, row);
+            OnPropertyChanged(nameof(IsEmpty));
+            SelectedResource = row;
+            DraftUrl = "";
+        }
+        finally
+        {
+            IsFetching = false;
         }
     }
 

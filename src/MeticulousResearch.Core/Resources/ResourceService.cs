@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Data.Entities;
 using MeticulousResearch.Core.Resources.Extraction;
+using MeticulousResearch.Core.Resources.Url;
 
 namespace MeticulousResearch.Core.Resources;
 
@@ -27,19 +28,35 @@ public sealed class ResourceService : IResourceService
     private readonly DataStore _store;
     private readonly ITokenEstimator _estimator;
     private readonly FileExtractionPipeline _pipeline;
+    private readonly IUrlFetcher _urlFetcher;
+    private readonly HtmlToMarkdownConverter _htmlConverter = new();
 
     /// <summary>Creates the service over a data store and a token estimator (default extractors).</summary>
     public ResourceService(DataStore store, ITokenEstimator estimator)
-        : this(store, estimator, FileExtractionPipeline.CreateDefault())
+        : this(store, estimator, FileExtractionPipeline.CreateDefault(), HttpUrlFetcher.CreateDefault())
     {
     }
 
     /// <summary>Creates the service over a data store, token estimator, and extraction pipeline.</summary>
     public ResourceService(DataStore store, ITokenEstimator estimator, FileExtractionPipeline pipeline)
+        : this(store, estimator, pipeline, HttpUrlFetcher.CreateDefault())
+    {
+    }
+
+    /// <summary>Creates the service over a data store, token estimator, and URL fetcher.</summary>
+    public ResourceService(DataStore store, ITokenEstimator estimator, IUrlFetcher urlFetcher)
+        : this(store, estimator, FileExtractionPipeline.CreateDefault(), urlFetcher)
+    {
+    }
+
+    /// <summary>Creates the service over a data store, token estimator, extraction pipeline, and URL fetcher.</summary>
+    public ResourceService(
+        DataStore store, ITokenEstimator estimator, FileExtractionPipeline pipeline, IUrlFetcher urlFetcher)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _estimator = estimator ?? throw new ArgumentNullException(nameof(estimator));
         _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
+        _urlFetcher = urlFetcher ?? throw new ArgumentNullException(nameof(urlFetcher));
     }
 
     /// <inheritdoc />
@@ -153,6 +170,70 @@ public sealed class ResourceService : IResourceService
     }
 
     /// <inheritdoc />
+    public Resource AddUrl(string projectId, string url)
+    {
+        if (string.IsNullOrWhiteSpace(projectId))
+            throw new ArgumentException("Project id is required.", nameof(projectId));
+
+        var normalized = (url ?? "").Trim();
+        if (!IsValidHttpUrl(normalized))
+            throw new ArgumentException($"'{url}' is not a valid URL. Enter a full http(s) address.", nameof(url));
+
+        var fetch = _urlFetcher.Fetch(normalized);
+        switch (fetch.Outcome)
+        {
+            case UrlFetchOutcome.ConnectionError:
+                throw new UrlResourceException($"Could not connect to {normalized}. Check the address and your network.");
+            case UrlFetchOutcome.Timeout:
+                throw new UrlResourceException($"The request to {normalized} timed out. Try again later.");
+            case UrlFetchOutcome.HttpError:
+                throw new UrlResourceException(
+                    $"The page could not be fetched from {normalized} (HTTP {fetch.StatusCode}).");
+        }
+
+        var rawHtml = fetch.Body ?? "";
+        var converted = _htmlConverter.Convert(rawHtml);
+        var markdown = converted.Markdown;
+        if (string.IsNullOrWhiteSpace(markdown))
+            throw new UrlResourceException($"No readable content was found at {normalized}.");
+
+        var id = NewId();
+        var resourceDir = _store.FileStore.GetResourceDirectory(projectId, id);
+
+        // Store the raw fetched HTML so a later re-extract can re-convert without re-fetching.
+        var blobPath = Path.Combine(resourceDir, "original.html");
+        File.WriteAllText(blobPath, rawHtml, Utf8NoBom);
+
+        var extractedPath = Path.Combine(resourceDir, ExtractedTextFileName);
+        File.WriteAllText(extractedPath, markdown, Utf8NoBom);
+
+        var now = Now();
+        var resource = new Resource
+        {
+            Id = id,
+            ProjectId = projectId,
+            Title = ResolveUrlTitle(converted.Title, normalized),
+            Type = ResourceTypes.Url,
+            SourceUri = normalized,
+            BlobPath = blobPath,
+            ExtractedPath = extractedPath,
+            ByteSize = Encoding.UTF8.GetByteCount(markdown),
+            TokenEstimate = _estimator.Estimate(markdown),
+            Enabled = true,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        using (var db = _store.CreateDbContext())
+        {
+            db.Resources.Add(resource);
+            db.SaveChanges();
+        }
+
+        return resource;
+    }
+
+    /// <inheritdoc />
     public Resource? Get(string resourceId)
     {
         using var db = _store.CreateDbContext();
@@ -201,4 +282,23 @@ public sealed class ResourceService : IResourceService
     private string Now() => _store.Clock.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
     private static string NewId() => Guid.NewGuid().ToString("N");
+
+    private static bool IsValidHttpUrl(string url)
+    {
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+    }
+
+    private static string ResolveUrlTitle(string? pageTitle, string url)
+    {
+        if (!string.IsNullOrWhiteSpace(pageTitle))
+        {
+            var title = pageTitle.Trim();
+            if (title.Length > DefaultTitleMaxLength)
+                title = title.Substring(0, DefaultTitleMaxLength).TrimEnd();
+            return title;
+        }
+
+        return url;
+    }
 }

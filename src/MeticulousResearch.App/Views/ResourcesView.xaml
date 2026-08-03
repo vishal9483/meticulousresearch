@@ -63,6 +63,33 @@
                            Text="{Binding UploadHint}"
                            Visibility="{Binding HasUploadHint,
                                         Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <!-- Add resource → URL -->
+                <TextBlock Text="Add resource → URL" FontWeight="SemiBold" Margin="0,16,0,0" />
+                <TextBox x:Name="DraftUrlBox" Margin="0,8,0,0"
+                         AutomationProperties.AutomationId="ResourceUrlInput"
+                         Text="{Binding DraftUrl, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock x:Name="UrlValidationError" Margin="0,8,0,0" Foreground="#C0392B"
+                           AutomationProperties.AutomationId="ResourceUrlValidationError"
+                           Text="{Binding UrlValidationError}"
+                           Visibility="{Binding HasUrlValidationError,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
+                <Button Content="Add URL" Padding="12,6" Margin="0,8,0,0" HorizontalAlignment="Left"
+                        AutomationProperties.AutomationId="AddUrlButton"
+                        Command="{Binding AddUrlCommand}" />
+                <!-- Fetch progress indicator -->
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0"
+                            AutomationProperties.AutomationId="FetchProgress"
+                            Visibility="{Binding IsFetching,
+                                         Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ProgressBar IsIndeterminate="True" Width="120" Height="6" />
+                    <TextBlock Text="Fetching…" Margin="8,0,0,0" Foreground="#555" />
+                </StackPanel>
+                <TextBlock x:Name="UrlError" Margin="0,8,0,0" Foreground="#C0392B" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="ResourceUrlError"
+                           Text="{Binding UrlError}"
+                           Visibility="{Binding HasUrlError,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </Border>
 
@@ -102,6 +129,12 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Preview" FontWeight="SemiBold"
                                Margin="0,0,0,8" />
+                    <TextBlock DockPanel.Dock="Top" x:Name="PreviewSourceUri" Margin="0,0,0,8"
+                               Foreground="#3366CC" TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="ResourcePreviewSourceUri"
+                               Text="{Binding SelectedSourceUri}"
+                               Visibility="{Binding HasSelectedSourceUri,
+                                            Converter={StaticResource BoolToVisibilityConverter}}" />
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <TextBlock x:Name="PreviewPane" Text="{Binding PreviewText}" TextWrapping="Wrap"
                                    AutomationProperties.AutomationId="ResourcePreview" />
