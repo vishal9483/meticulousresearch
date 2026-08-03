@@ -27,6 +27,13 @@ public sealed class Resource
     /// <summary>Path to the extracted-text file used for search/context (nullable).</summary>
     public string? ExtractedPath { get; set; }
 
+    /// <summary>
+    /// The extracted body text, denormalized from <see cref="ExtractedPath"/>'s file into the
+    /// database so the <c>ResourceFts</c> full-text index (SPEC §5) can index the searchable body
+    /// (its triggers read this column). Kept in sync by the resource service on add/re-extract.
+    /// </summary>
+    public string? ExtractedText { get; set; }
+
     /// <summary>Size of the original in bytes (nullable when not file-backed).</summary>
     public long? ByteSize { get; set; }
 

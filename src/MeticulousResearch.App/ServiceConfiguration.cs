@@ -10,6 +10,7 @@ using MeticulousResearch.Core.Environment;
 using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Resources.Url;
+using MeticulousResearch.Core.Search;
 using MeticulousResearch.Core.Security;
 using MeticulousResearch.Core.Settings;
 using MeticulousResearch.Core.Theming;
@@ -53,6 +54,10 @@ public static class ServiceConfiguration
                 sp.GetRequiredService<DataStore>(),
                 sp.GetRequiredService<ITokenEstimator>(),
                 sp.GetRequiredService<IUrlFetcher>()));
+
+        // Full-text search over resource extracted text (full-text-search/phase.md): reads the
+        // FTS5 index/triggers owned by data-store-migrations, project-scoped and relevance-ranked.
+        services.AddSingleton<ISearchService>(sp => new SearchService(sp.GetRequiredService<DataStore>()));
 
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();

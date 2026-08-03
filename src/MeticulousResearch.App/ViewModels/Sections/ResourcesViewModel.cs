@@ -4,6 +4,7 @@ using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Resources.Extraction;
 using MeticulousResearch.Core.Resources.Url;
+using MeticulousResearch.Core.Search;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
 
@@ -17,24 +18,41 @@ namespace MeticulousResearch.App.ViewModels.Sections;
 public sealed partial class ResourcesViewModel : SectionViewModel
 {
     private readonly IResourceService? _resources;
+    private readonly ISearchService? _search;
 
     /// <summary>Designed empty-state message shown when the project has no resources yet.</summary>
     public const string EmptyStateMessage = "No resources yet. Add pasted text to ground Claude in your notes.";
 
+    /// <summary>Designed empty-state message shown when a search matches no resources.</summary>
+    public const string NoSearchMatchesMessage = "No resources match your search.";
+
     /// <summary>
     /// Design-time / window-free constructor without a service (renders the designed empty state).
     /// </summary>
-    public ResourcesViewModel(string projectId) : this(projectId, null) { }
+    public ResourcesViewModel(string projectId) : this(projectId, null, null) { }
 
     /// <summary>
     /// Creates the Resources section for <paramref name="projectId"/>, wired to the resource
     /// service so pasted text can be added, listed, and previewed. When no service is supplied the
     /// section renders its designed empty state.
     /// </summary>
-    public ResourcesViewModel(string projectId, IResourceService? resources) : base(projectId)
+    public ResourcesViewModel(string projectId, IResourceService? resources)
+        : this(projectId, resources, null) { }
+
+    /// <summary>
+    /// Creates the Resources section wired to the resource service and the full-text
+    /// <paramref name="search"/> service that backs the live search box (full-text-search/phase.md).
+    /// </summary>
+    public ResourcesViewModel(string projectId, IResourceService? resources, ISearchService? search) : base(projectId)
     {
         _resources = resources;
+        _search = search;
         Resources = new ObservableCollection<ResourceRowViewModel>();
+        Resources.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(VisibleResources));
+            OnPropertyChanged(nameof(HasNoSearchMatches));
+        };
         Load();
     }
 
@@ -52,6 +70,62 @@ public sealed partial class ResourcesViewModel : SectionViewModel
 
     /// <summary>Whether the project currently has no resources (drives the empty state).</summary>
     public bool IsEmpty => Resources.Count == 0;
+
+    private string _searchQuery = "";
+
+    /// <summary>
+    /// The text typed into the resources search box. Filtering is live: setting it recomputes
+    /// <see cref="VisibleResources"/> against the project's full-text index and refreshes the
+    /// no-matches empty state (full-text-search/phase.md).
+    /// </summary>
+    public string SearchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            if (SetProperty(ref _searchQuery, value ?? ""))
+            {
+                OnPropertyChanged(nameof(VisibleResources));
+                OnPropertyChanged(nameof(HasActiveSearch));
+                OnPropertyChanged(nameof(HasNoSearchMatches));
+            }
+        }
+    }
+
+    /// <summary>Whether a non-empty search query is currently narrowing the list.</summary>
+    public bool HasActiveSearch => !string.IsNullOrWhiteSpace(_searchQuery);
+
+    /// <summary>
+    /// The resources currently visible in the table: all resources when the search box is empty,
+    /// otherwise only those whose extracted text or title match the query (project-scoped,
+    /// relevance-ranked via the full-text index), preserving the search's ranking order.
+    /// </summary>
+    public IReadOnlyList<ResourceRowViewModel> VisibleResources
+    {
+        get
+        {
+            if (!HasActiveSearch)
+                return Resources.ToList();
+
+            if (_search is not null)
+            {
+                var byId = Resources.ToDictionary(r => r.Id);
+                return _search.SearchResources(ProjectId, _searchQuery)
+                    .Where(hit => byId.ContainsKey(hit.Id))
+                    .Select(hit => byId[hit.Id])
+                    .ToList();
+            }
+
+            return Resources
+                .Where(r => r.Title.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Whether an active search matched nothing (drives the designed "no matches" empty state).
+    /// </summary>
+    public bool HasNoSearchMatches => HasActiveSearch && VisibleResources.Count == 0;
 
     private ResourceRowViewModel? _selectedResource;
 

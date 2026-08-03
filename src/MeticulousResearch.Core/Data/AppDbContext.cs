@@ -51,6 +51,7 @@ public sealed class AppDbContext : DbContext
             e.Property(x => x.SourceUri).HasColumnName("source_uri");
             e.Property(x => x.BlobPath).HasColumnName("blob_path");
             e.Property(x => x.ExtractedPath).HasColumnName("extracted_path");
+            e.Property(x => x.ExtractedText).HasColumnName("extracted_text");
             e.Property(x => x.ByteSize).HasColumnName("byte_size");
             e.Property(x => x.TokenEstimate).HasColumnName("token_estimate");
             e.Property(x => x.Enabled).HasColumnName("enabled");

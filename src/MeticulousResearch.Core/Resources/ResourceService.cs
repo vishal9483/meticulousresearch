@@ -82,6 +82,7 @@ public sealed class ResourceService : IResourceService
             SourceUri = null,
             BlobPath = null,
             ExtractedPath = extractedPath,
+            ExtractedText = text,
             ByteSize = Encoding.UTF8.GetByteCount(text),
             TokenEstimate = _estimator.Estimate(text),
             Enabled = true,
@@ -153,6 +154,7 @@ public sealed class ResourceService : IResourceService
             SourceUri = Path.GetFileName(filePath),
             BlobPath = blobPath,
             ExtractedPath = extractedPath,
+            ExtractedText = extractedText,
             ByteSize = byteSize,
             TokenEstimate = _estimator.Estimate(extractedText),
             Enabled = true,
@@ -217,6 +219,7 @@ public sealed class ResourceService : IResourceService
             SourceUri = normalized,
             BlobPath = blobPath,
             ExtractedPath = extractedPath,
+            ExtractedText = markdown,
             ByteSize = Encoding.UTF8.GetByteCount(markdown),
             TokenEstimate = _estimator.Estimate(markdown),
             Enabled = true,
@@ -353,6 +356,7 @@ public sealed class ResourceService : IResourceService
         File.WriteAllText(extractedPath, extractedText, Utf8NoBom);
 
         resource.ExtractedPath = extractedPath;
+        resource.ExtractedText = extractedText;
         resource.TokenEstimate = _estimator.Estimate(extractedText);
         resource.UpdatedAt = Now();
         db.SaveChanges();
