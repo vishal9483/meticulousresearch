@@ -44,3 +44,6 @@ edit-with-claude: APPROVED after 1 attempt, merged into main (e708b94), gate=App
 report-composition: APPROVED after 1 attempt, merged into main (0706989), gate=App67/Core352+1skip. New IReportCompositionService (Core.Reports) consumes IArtifactService only. Composition = doc artifact w/ JSON manifest (kind=report-composition + ordered section refs + optional pinnedVersionId). Render()->CompiledReport (ordered RenderedSections + concatenated markdown, CSV->table, broken-ref placeholders). Downstream: branded-export (M4) consumes.
 
 == M3 COMPLETE: all 6 features merged into main. Final gate=App67/Core352(+1 skip @requires-key). Contract=artifact-creation. NOTE: intermittent M1 SQLite pool flake (ImageVisionCaption) still observed once, green on rerun. MILESTONE GATE - awaiting human sign-off for M4. ==
+
+## M4 (in progress) base=main
+branded-export: APPROVED after 1 attempt, merged into main (3ee2b1f), gate=App67/Core382+1skip. New IExportService (Core.Export): Preview/Export->ExportResult over ExportSource/ExportArtifact, RenderedDocument tree, deterministic md/docx/xlsx/pdf writers (sorted zip entries, explicit rel IDs, frozen timestamps), BrandSettings input record (Unset->navy; NOT yet persisted-a future settings integration wires accent/logo/confidentiality). Consumes report-composition/artifact services. Downstream v1-acceptance.
