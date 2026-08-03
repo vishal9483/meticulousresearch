@@ -5,6 +5,7 @@ using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Data.Entities;
 using MeticulousResearch.Core.Resources.Extraction;
 using MeticulousResearch.Core.Resources.Url;
+using MeticulousResearch.Core.Resources.Vision;
 
 namespace MeticulousResearch.Core.Resources;
 
@@ -29,6 +30,8 @@ public sealed class ResourceService : IResourceService
     private readonly ITokenEstimator _estimator;
     private readonly FileExtractionPipeline _pipeline;
     private readonly IUrlFetcher _urlFetcher;
+    private readonly IImageCaptioner _captioner;
+    private readonly ImageCaptionOptions _captionOptions;
     private readonly HtmlToMarkdownConverter _htmlConverter = new();
 
     /// <summary>Creates the service over a data store and a token estimator (default extractors).</summary>
@@ -52,11 +55,36 @@ public sealed class ResourceService : IResourceService
     /// <summary>Creates the service over a data store, token estimator, extraction pipeline, and URL fetcher.</summary>
     public ResourceService(
         DataStore store, ITokenEstimator estimator, FileExtractionPipeline pipeline, IUrlFetcher urlFetcher)
+        : this(store, estimator, pipeline, urlFetcher, new NotImplementedImageCaptioner(), ImageCaptionOptions.Default)
+    {
+    }
+
+    /// <summary>
+    /// Creates the service over a data store and a token estimator with an image captioner and
+    /// caption options (default extractors and URL fetcher). Use this overload to enable caption-on-add
+    /// for image resources (SPEC §3.2.1).
+    /// </summary>
+    public ResourceService(
+        DataStore store, ITokenEstimator estimator, IImageCaptioner captioner, ImageCaptionOptions captionOptions)
+        : this(store, estimator, FileExtractionPipeline.CreateDefault(), HttpUrlFetcher.CreateDefault(),
+            captioner, captionOptions)
+    {
+    }
+
+    /// <summary>
+    /// Creates the fully-specified service, including the image captioner and caption options used by
+    /// the image-vision-caption path.
+    /// </summary>
+    public ResourceService(
+        DataStore store, ITokenEstimator estimator, FileExtractionPipeline pipeline, IUrlFetcher urlFetcher,
+        IImageCaptioner captioner, ImageCaptionOptions captionOptions)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _estimator = estimator ?? throw new ArgumentNullException(nameof(estimator));
         _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
         _urlFetcher = urlFetcher ?? throw new ArgumentNullException(nameof(urlFetcher));
+        _captioner = captioner ?? throw new ArgumentNullException(nameof(captioner));
+        _captionOptions = captionOptions ?? throw new ArgumentNullException(nameof(captionOptions));
     }
 
     /// <inheritdoc />
@@ -237,6 +265,99 @@ public sealed class ResourceService : IResourceService
     }
 
     /// <inheritdoc />
+    public Resource AddImage(string projectId, string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(projectId))
+            throw new ArgumentException("Project id is required.", nameof(projectId));
+        if (string.IsNullOrWhiteSpace(filePath))
+            throw new ArgumentException("File path is required.", nameof(filePath));
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException("Image file was not found.", filePath);
+
+        var extension = ImageFormats.NormalizeExtension(filePath);
+
+        // Reject unsupported image types before creating anything so no resource is created.
+        if (!ImageFormats.IsSupported(extension))
+            throw new UnsupportedImageTypeException(extension);
+
+        var id = NewId();
+        var resourceDir = _store.FileStore.GetResourceDirectory(projectId, id);
+
+        // Store the original image as a copy under the resource directory. No OCR/text extraction is
+        // run here — text understanding is deferred to the model's native vision at request time.
+        var blobPath = Path.Combine(resourceDir, $"original.{extension}");
+        File.Copy(filePath, blobPath, overwrite: true);
+        var byteSize = new FileInfo(blobPath).Length;
+
+        // Image tokens are estimated from pixel dimensions (a different unit than text length).
+        var tokenEstimate = EstimateImageTokens(blobPath, byteSize);
+
+        // Optional caption cache: one small vision call, non-fatal on failure.
+        var caption = "";
+        if (_captionOptions.CaptionOnAdd)
+            caption = TryCaption(blobPath);
+
+        var extractedPath = Path.Combine(resourceDir, ExtractedTextFileName);
+        File.WriteAllText(extractedPath, caption, Utf8NoBom);
+
+        var now = Now();
+        var resource = new Resource
+        {
+            Id = id,
+            ProjectId = projectId,
+            Title = Path.GetFileNameWithoutExtension(filePath),
+            Type = ResourceTypes.Image,
+            SourceUri = Path.GetFileName(filePath),
+            BlobPath = blobPath,
+            ExtractedPath = extractedPath,
+            ExtractedText = caption,
+            ByteSize = byteSize,
+            TokenEstimate = tokenEstimate,
+            Enabled = true,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        using (var db = _store.CreateDbContext())
+        {
+            db.Resources.Add(resource);
+            db.SaveChanges();
+        }
+
+        return resource;
+    }
+
+    /// <inheritdoc />
+    public Resource GenerateImageCaption(string resourceId)
+    {
+        using var db = _store.CreateDbContext();
+        var resource = db.Resources.FirstOrDefault(r => r.Id == resourceId)
+            ?? throw new InvalidOperationException($"Resource '{resourceId}' not found.");
+
+        if (resource.Type != ResourceTypes.Image)
+            throw new InvalidOperationException(
+                $"Resource '{resourceId}' is not an image resource and cannot be captioned.");
+
+        if (string.IsNullOrEmpty(resource.BlobPath) || !File.Exists(resource.BlobPath))
+            throw new InvalidOperationException(
+                $"Image resource '{resourceId}' has no stored original to caption.");
+
+        var caption = _captioner.Caption(resource.BlobPath) ?? "";
+
+        var extractedPath = string.IsNullOrEmpty(resource.ExtractedPath)
+            ? Path.Combine(
+                _store.FileStore.GetResourceDirectory(resource.ProjectId, resource.Id), ExtractedTextFileName)
+            : resource.ExtractedPath;
+        File.WriteAllText(extractedPath, caption, Utf8NoBom);
+
+        resource.ExtractedPath = extractedPath;
+        resource.ExtractedText = caption;
+        resource.UpdatedAt = Now();
+        db.SaveChanges();
+        return resource;
+    }
+
+    /// <inheritdoc />
     public Resource? Get(string resourceId)
     {
         using var db = _store.CreateDbContext();
@@ -401,6 +522,36 @@ public sealed class ResourceService : IResourceService
     private string Now() => _store.Clock.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
     private static string NewId() => Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// Estimates the image token contribution from the stored original's pixel dimensions. When the
+    /// header cannot be read, falls back to a positive estimate so an image always contributes.
+    /// </summary>
+    private long EstimateImageTokens(string blobPath, long byteSize)
+    {
+        var dimensions = ImageHeaderReader.TryReadDimensions(blobPath);
+        if (dimensions is { } dims && dims.Width > 0 && dims.Height > 0)
+            return _estimator.EstimateImageTokens(dims.Width, dims.Height);
+
+        // Unknown header: any real image still contributes a positive estimate.
+        return Math.Max(1, byteSize / 1024);
+    }
+
+    /// <summary>
+    /// Runs one small vision caption call, treating any failure as non-fatal (returns empty) so a
+    /// caption error never blocks adding the image (SPEC §3.2.1).
+    /// </summary>
+    private string TryCaption(string blobPath)
+    {
+        try
+        {
+            return _captioner.Caption(blobPath) ?? "";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
+    }
 
     private static bool IsValidHttpUrl(string url)
     {

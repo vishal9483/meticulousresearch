@@ -49,6 +49,9 @@
                     <Button Content="Upload file…" Padding="12,6" Margin="8,0,0,0"
                             AutomationProperties.AutomationId="UploadFileButton"
                             Click="OnUploadFileClick" />
+                    <Button Content="Add image…" Padding="12,6" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="AddImageButton"
+                            Click="OnAddImageClick" />
                 </StackPanel>
                 <!-- Async extraction progress indicator -->
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0"
@@ -62,6 +65,11 @@
                            AutomationProperties.AutomationId="ResourceUploadHint"
                            Text="{Binding UploadHint}"
                            Visibility="{Binding HasUploadHint,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
+                <TextBlock x:Name="ImageHint" Margin="0,8,0,0" Foreground="#B26A00" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="ResourceImageHint"
+                           Text="{Binding ImageHint}"
+                           Visibility="{Binding HasImageHint,
                                         Converter={StaticResource BoolToVisibilityConverter}}" />
 
                 <!-- Add resource → URL -->
@@ -198,6 +206,19 @@
                                Text="{Binding SelectedSourceUri}"
                                Visibility="{Binding HasSelectedSourceUri,
                                             Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <!-- Image resource: thumbnail preview + cached-caption generation (no resend) -->
+                    <Image DockPanel.Dock="Top" x:Name="ResourceThumbnail" Margin="0,0,0,8"
+                           MaxHeight="200" HorizontalAlignment="Left" Stretch="Uniform"
+                           AutomationProperties.AutomationId="ResourceThumbnail"
+                           Source="{Binding SelectedThumbnailPath}"
+                           Visibility="{Binding HasThumbnail,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <Button DockPanel.Dock="Top" Content="Generate caption" Padding="10,4" Margin="0,0,0,8"
+                            HorizontalAlignment="Left"
+                            AutomationProperties.AutomationId="GenerateCaptionButton"
+                            Command="{Binding GenerateCaptionSelectedCommand}"
+                            Visibility="{Binding SelectedIsImage,
+                                         Converter={StaticResource BoolToVisibilityConverter}}" />
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <TextBlock x:Name="PreviewPane" Text="{Binding PreviewText}" TextWrapping="Wrap"
                                    AutomationProperties.AutomationId="ResourcePreview" />

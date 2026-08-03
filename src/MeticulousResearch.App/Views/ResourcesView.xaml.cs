@@ -30,6 +30,20 @@ public partial class ResourcesView : UserControl
             await vm.UploadFilesAsync(dialog.FileNames);
     }
 
+    private static string ImageDialogFilter =>
+        "Images|" +
+        string.Join(';', Core.Resources.Vision.ImageFormats.SupportedExtensions.Select(e => $"*.{e}"));
+
+    private async void OnAddImageClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ResourcesViewModel vm)
+            return;
+
+        var dialog = new OpenFileDialog { Multiselect = true, Filter = ImageDialogFilter };
+        if (dialog.ShowDialog() == true)
+            await vm.AddImagesAsync(dialog.FileNames);
+    }
+
     private void OnResourcesDragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
