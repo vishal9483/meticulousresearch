@@ -11,7 +11,9 @@
     </UserControl.Resources>
     <!-- Resources center-pane view (SPEC §3.2): add-text entry, a table of resources, and a
          preview pane for the selected resource's extracted text. Scrollable at narrow widths. -->
-    <Grid x:Name="ResourcesRoot" Margin="24">
+    <Grid x:Name="ResourcesRoot" Margin="24" AllowDrop="True"
+          AutomationProperties.AutomationId="ResourcesRoot"
+          DragOver="OnResourcesDragOver" Drop="OnResourcesDrop">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -40,10 +42,27 @@
                            Text="{Binding ValidationError}"
                            Visibility="{Binding HasValidationError,
                                         Converter={StaticResource BoolToVisibilityConverter}}" />
-                <Button Content="Add pasted text" Margin="0,8,0,0" Padding="12,6"
-                        HorizontalAlignment="Left"
-                        AutomationProperties.AutomationId="AddPastedTextButton"
-                        Command="{Binding AddPastedTextCommand}" />
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="Add pasted text" Padding="12,6"
+                            AutomationProperties.AutomationId="AddPastedTextButton"
+                            Command="{Binding AddPastedTextCommand}" />
+                    <Button Content="Upload file…" Padding="12,6" Margin="8,0,0,0"
+                            AutomationProperties.AutomationId="UploadFileButton"
+                            Click="OnUploadFileClick" />
+                </StackPanel>
+                <!-- Async extraction progress indicator -->
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0"
+                            AutomationProperties.AutomationId="ExtractionProgress"
+                            Visibility="{Binding IsExtracting,
+                                         Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ProgressBar IsIndeterminate="True" Width="120" Height="6" />
+                    <TextBlock Text="Extracting…" Margin="8,0,0,0" Foreground="#555" />
+                </StackPanel>
+                <TextBlock x:Name="UploadHint" Margin="0,8,0,0" Foreground="#B26A00" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="ResourceUploadHint"
+                           Text="{Binding UploadHint}"
+                           Visibility="{Binding HasUploadHint,
+                                        Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </Border>
 
