@@ -8,6 +8,7 @@ using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Ai.Backoff;
 using MeticulousResearch.Core.Artifacts;
+using MeticulousResearch.Core.Artifacts.Diff;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Credentials;
@@ -114,6 +115,11 @@ public static class ServiceConfiguration
             sp.GetRequiredService<IChatService>(),
             sp.GetRequiredService<IClock>(),
             new CatalogTurnCostCalculator(sp.GetRequiredService<IModelCatalog>())));
+
+        // Artifact diff engine (artifact-diff/phase.md, SPEC §3.4): a pure, read-only diff over the
+        // version history owned by artifact-versioning. Consumed by the artifact editor's diff mode
+        // and, later, by edit-with-claude to review a Claude edit before keeping it.
+        services.AddSingleton<IArtifactDiffService, ArtifactDiffService>();
 
         // Deliverable-template catalog + service (deliverable-templates/phase.md, SPEC §3.4.1):
         // config-driven research templates (shipped default merged with a Settings override JSON)
