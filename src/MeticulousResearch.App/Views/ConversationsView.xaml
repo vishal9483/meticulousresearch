@@ -110,6 +110,29 @@
                                                Foreground="#555" />
                                     <TextBlock Text="{Binding Content}" Margin="0,4,0,0"
                                                TextWrapping="Wrap" />
+                                    <!-- Streaming cursor/indicator (streaming, SPEC §3.3): shown while
+                                         tokens are arriving; clears on completion. -->
+                                    <TextBlock x:Name="StreamingIndicator" Margin="0,4,0,0"
+                                               FontSize="12" Foreground="#0A7"
+                                               Text="▌ streaming…"
+                                               AutomationProperties.AutomationId="StreamingIndicator"
+                                               AutomationProperties.Name="Streaming"
+                                               Visibility="{Binding IsStreamingIndicatorVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <!-- Interrupted affordance (streaming, SPEC §8): a stopped/faulted
+                                         turn shows it was interrupted and offers a resume/retry action. -->
+                                    <StackPanel x:Name="InterruptedNotice" Orientation="Horizontal"
+                                                Margin="0,6,0,0"
+                                                AutomationProperties.AutomationId="InterruptedNotice"
+                                                Visibility="{Binding IsInterrupted, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <TextBlock VerticalAlignment="Center" Foreground="#B00"
+                                                   FontSize="12" Text="Interrupted"
+                                                   AutomationProperties.AutomationId="InterruptedBadge"
+                                                   AutomationProperties.Name="Interrupted" />
+                                        <Button Margin="10,0,0,0" Padding="10,2" Content="Resume"
+                                                AutomationProperties.AutomationId="ResumeButton"
+                                                AutomationProperties.Name="Resume"
+                                                Command="{Binding ResumeCommand}" />
+                                    </StackPanel>
                                     <!-- Model that produced this assistant turn (model-selector, SPEC §3.3). -->
                                     <TextBlock x:Name="TurnModelLabel" Margin="0,4,0,0"
                                                FontSize="11" Foreground="#888"
@@ -151,6 +174,14 @@
                     VerticalAlignment="Bottom"
                     AutomationProperties.AutomationId="SendButton"
                     Command="{Binding SendCommand}" />
+            <!-- Stop control (streaming, SPEC §3.5): cancels an in-progress generation; shown only
+                 while streaming. -->
+            <Button Grid.Column="1" Content="Stop" Padding="16,8" Margin="8,0,0,0"
+                    VerticalAlignment="Bottom"
+                    AutomationProperties.AutomationId="StopButton"
+                    AutomationProperties.Name="Stop"
+                    Command="{Binding StopCommand}"
+                    Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVisibilityConverter}}" />
         </Grid>
     </Grid>
 </UserControl>
