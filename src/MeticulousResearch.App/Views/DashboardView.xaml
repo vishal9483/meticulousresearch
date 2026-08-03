@@ -1,0 +1,66 @@
+<UserControl x:Class="MeticulousResearch.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sections="clr-namespace:MeticulousResearch.App.ViewModels.Sections"
+             d:DataContext="{d:DesignInstance sections:DashboardViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <!-- Project dashboard center-pane view: counts, last activity, and quick actions (SPEC §3.1).
+         Scrollable so content is never clipped at narrow widths (@ui resize scenario). -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" x:Name="DashboardRoot">
+            <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Headline}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#555" />
+
+            <!-- Counts -->
+            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ResourceCount}" FontSize="24" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="ResourceCount" />
+                        <TextBlock Text="Resources" Foreground="#777" />
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ConversationCount}" FontSize="24" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="ConversationCount" />
+                        <TextBlock Text="Conversations" Foreground="#777" />
+                    </StackPanel>
+                </Border>
+                <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ArtifactCount}" FontSize="24" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="ArtifactCount" />
+                        <TextBlock Text="Artifacts" Foreground="#777" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Last activity -->
+            <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                <TextBlock Text="Last activity: " Foreground="#777" />
+                <TextBlock Text="{Binding LastActivity}" AutomationProperties.AutomationId="LastActivity" />
+            </StackPanel>
+
+            <!-- Consolidated cost panel slot is added later by cost-tracking (SPEC §3.6). -->
+
+            <!-- Quick actions -->
+            <TextBlock Text="Quick actions" FontWeight="SemiBold" Margin="0,24,0,8" />
+            <ItemsControl x:Name="QuickActions" ItemsSource="{Binding QuickActions}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding}" AutomationProperties.Name="{Binding}"
+                                Padding="12,8" Margin="0,0,8,0" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
