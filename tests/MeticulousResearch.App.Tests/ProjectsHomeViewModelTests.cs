@@ -1,7 +1,6 @@
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.Tests.Navigation;
 using MeticulousResearch.App.ViewModels;
-using MeticulousResearch.Core.Data.Entities;
 using MeticulousResearch.Core.Projects;
 
 namespace MeticulousResearch.App.Tests;
@@ -59,13 +58,13 @@ public class ProjectsHomeViewModelTests
     [Fact]
     public void Creating_a_project_opens_its_workspace()
     {
-        var (vm, _, nav) = NewHome();
+        var (vm, svc, nav) = NewHome();
         vm.NewProjectName = "Food & Beverage 2026";
 
         vm.CreateProjectCommand.Execute(null);
 
         var workspace = Assert.IsType<ProjectWorkspaceViewModel>(nav.CurrentViewModel);
-        var created = ((FakeProjectService)GetService(vm)).Projects.Single();
+        var created = svc.Projects.Single();
         Assert.Equal(created.Id, workspace.ProjectId);
         Assert.Equal(created.Id, nav.ActiveProjectId);
     }
@@ -135,12 +134,5 @@ public class ProjectsHomeViewModelTests
         Assert.False(vm.IsConfirmingDelete);
         Assert.Equal(0, svc.DeleteCount);
         Assert.Contains(svc.Projects, p => p.Id == project.Id);
-    }
-
-    private static IProjectService GetService(ProjectsHomeViewModel vm)
-    {
-        var field = typeof(ProjectsHomeViewModel).GetField(
-            "_projects", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        return (IProjectService)field.GetValue(vm)!;
     }
 }
