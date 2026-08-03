@@ -44,7 +44,53 @@
                 <TextBlock Text="{Binding LastActivity}" AutomationProperties.AutomationId="LastActivity" />
             </StackPanel>
 
-            <!-- Consolidated cost panel slot is added later by cost-tracking (SPEC §3.6). -->
+            <!-- Consolidated cost panel (cost-tracking, SPEC §3.6, §9.1(7)): total spend with
+                 breakdowns by conversations-vs-artifacts, by model, and by time window. -->
+            <Border x:Name="ConsolidatedCostPanel" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
+                    Padding="16" Margin="0,20,0,0"
+                    AutomationProperties.AutomationId="ConsolidatedCostPanel">
+                <StackPanel DataContext="{Binding CostPanel}">
+                    <TextBlock Text="Cost" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding TotalDisplay}" FontSize="24" FontWeight="Bold"
+                               AutomationProperties.AutomationId="CostTotal" />
+
+                    <!-- By source: conversations vs artifacts -->
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0"
+                                AutomationProperties.AutomationId="CostBySource">
+                        <TextBlock Text="Conversations: " Foreground="#777" />
+                        <TextBlock Text="{Binding ConversationsDisplay}"
+                                   AutomationProperties.AutomationId="CostConversations" />
+                        <TextBlock Text="   Artifacts: " Foreground="#777" />
+                        <TextBlock Text="{Binding ArtifactsDisplay}"
+                                   AutomationProperties.AutomationId="CostArtifacts" />
+                    </StackPanel>
+
+                    <!-- By model -->
+                    <TextBlock Text="By model" Foreground="#777" Margin="0,12,0,4" />
+                    <ItemsControl ItemsSource="{Binding ByModel}"
+                                  AutomationProperties.AutomationId="CostByModel">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Model}" MinWidth="160" />
+                                    <TextBlock Text="{Binding CostDisplay}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- By time window -->
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0"
+                                AutomationProperties.AutomationId="CostByWindow">
+                        <TextBlock Text="Today: " Foreground="#777" />
+                        <TextBlock Text="{Binding Today}" AutomationProperties.AutomationId="CostToday" />
+                        <TextBlock Text="   This week: " Foreground="#777" />
+                        <TextBlock Text="{Binding Week}" AutomationProperties.AutomationId="CostWeek" />
+                        <TextBlock Text="   All time: " Foreground="#777" />
+                        <TextBlock Text="{Binding AllTime}" AutomationProperties.AutomationId="CostAllTime" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
 
             <!-- Quick actions -->
             <TextBlock Text="Quick actions" FontWeight="SemiBold" Margin="0,24,0,8" />

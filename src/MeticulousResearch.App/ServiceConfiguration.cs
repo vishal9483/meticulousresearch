@@ -11,6 +11,7 @@ using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
+using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
@@ -56,6 +57,17 @@ public static class ServiceConfiguration
         // a known path under the data directory when present, else the shipped default.
         services.AddSingleton<IModelCatalog>(_ =>
             ModelCatalogLoader.LoadFromFile(System.IO.Path.Combine(dataDirectory, "model-catalog.json")).Catalog);
+
+        // Cost engine (cost-tracking/phase.md, SPEC §3.6): the authoritative cost computation for the
+        // whole app. Prices are read from the model catalog; totals recompute from stored tokens so a
+        // price change reprices history. Consumed by usage-csv-export (per-turn priced rows) and the
+        // dashboard's consolidated cost panel.
+        services.AddSingleton<ICostPriceSource>(sp =>
+            new CatalogCostPriceSource(sp.GetRequiredService<IModelCatalog>()));
+        services.AddSingleton<ICostService>(sp => new CostService(
+            sp.GetRequiredService<DataStore>(),
+            sp.GetRequiredService<ICostPriceSource>(),
+            sp.GetRequiredService<IClock>()));
 
         // Project domain service (projects-crud/phase.md): CRUD + dashboard aggregation.
         services.AddSingleton<IProjectService>(sp =>

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Projects;
 
 namespace MeticulousResearch.App.ViewModels.Sections;
@@ -28,12 +29,26 @@ public sealed class DashboardViewModel : SectionViewModel
     /// <paramref name="projects"/> service is supplied the counts and last-activity figures are
     /// loaded; otherwise they default to zero.
     /// </summary>
-    public DashboardViewModel(string projectId, IProjectService? projects) : base(projectId)
+    public DashboardViewModel(string projectId, IProjectService? projects) : this(projectId, projects, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates the Dashboard section for <paramref name="projectId"/>. When a
+    /// <paramref name="cost"/> service is supplied the consolidated cost panel (SPEC §3.6) is
+    /// populated with total spend and the by-source/by-model/by-window breakdowns.
+    /// </summary>
+    public DashboardViewModel(string projectId, IProjectService? projects, ICostService? cost) : base(projectId)
     {
         QuickActions = new ReadOnlyCollection<string>(QuickActionLabels);
         if (projects is not null)
             LoadFrom(projects);
+        if (cost is not null)
+            CostPanel = new ConsolidatedCostViewModel(cost, projectId);
     }
+
+    /// <summary>The consolidated cost panel (SPEC §3.6), or <c>null</c> when no cost service is wired.</summary>
+    public ConsolidatedCostViewModel? CostPanel { get; private set; }
 
     /// <inheritdoc />
     public override NavigationSection Section => NavigationSection.Dashboard;

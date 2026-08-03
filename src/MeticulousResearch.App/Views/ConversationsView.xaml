@@ -96,7 +96,20 @@
 
         <!-- Conversation thread -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Conversation-header running cost (cost-tracking, SPEC §3.6): the thread's live
+                 running total, recomputed from stored tokens at current prices as turns complete. -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Running cost: " Foreground="#777" />
+                <TextBlock Text="{Binding RunningCostDisplay}" FontWeight="SemiBold"
+                           AutomationProperties.AutomationId="ConversationRunningCost" />
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ItemsControl x:Name="ConversationThread"
                               AutomationProperties.AutomationId="ConversationThread"
                               ItemsSource="{Binding Turns}">
