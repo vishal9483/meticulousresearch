@@ -4,6 +4,7 @@ using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.Theme;
 using MeticulousResearch.App.ViewModels;
 using MeticulousResearch.App.ViewModels.Sections;
+using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Data;
 using MeticulousResearch.Core.Environment;
@@ -58,6 +59,14 @@ public static class ServiceConfiguration
         // Full-text search over resource extracted text (full-text-search/phase.md): reads the
         // FTS5 index/triggers owned by data-store-migrations, project-scoped and relevance-ranked.
         services.AddSingleton<ISearchService>(sp => new SearchService(sp.GetRequiredService<DataStore>()));
+
+        // Pre-send context-budget estimate (context-budget/phase.md): enabled-resource scope +
+        // overhead vs the selected model window (hard ceiling) and configured budget (soft), never
+        // truncating silently.
+        services.AddSingleton<IContextBudgetService>(sp =>
+            new ContextBudgetService(
+                sp.GetRequiredService<IResourceService>(),
+                sp.GetRequiredService<ISettingsService>()));
 
         // Design system and theming (design-system-theming/phase.md).
         services.AddSingleton<ISystemThemeProvider, WpfSystemThemeProvider>();
