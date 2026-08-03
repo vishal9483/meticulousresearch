@@ -32,3 +32,4 @@ Thumbs.db
 ## NuGet
 *.nupkg
 .nuget/
+app-run.log
