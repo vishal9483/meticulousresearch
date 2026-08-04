@@ -4,11 +4,23 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- app-branding-icon (M6, SPEC §3.7): the single multi-resolution application icon Windows
+         uses for the window, taskbar, and Start Menu; the installer reuses the same asset. -->
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <!-- The product name comes from a single source (Core AssemblyAppInfo.ProductNameValue); the
+         auto-generated Product attribute is disabled so AssemblyInfo.cs can stamp that same const,
+         avoiding a duplicated literal. -->
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ship the icon as a WPF resource (pack URI for the window/onboarding/About). -->
+    <Resource Include="Assets\AppIcon.ico" />
   </ItemGroup>
 
   <ItemGroup>

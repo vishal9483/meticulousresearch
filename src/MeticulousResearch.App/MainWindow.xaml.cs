@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using MeticulousResearch.App.Branding;
 using MeticulousResearch.App.ViewModels;
 
 namespace MeticulousResearch.App;
@@ -25,6 +27,17 @@ public partial class MainWindow : Window
         _palette = paletteViewModel ?? throw new ArgumentNullException(nameof(paletteViewModel));
         Palette.DataContext = _palette;
         PreviewKeyDown += OnPreviewKeyDown;
+        ApplyBranding();
+    }
+
+    /// <summary>
+    /// Applies the shared brand identity (app-branding-icon, SPEC §3.7): the window title carries the
+    /// single-source product name and the title bar shows the packaged application icon.
+    /// </summary>
+    private void ApplyBranding()
+    {
+        Title = AppBranding.WindowTitle;
+        Icon = new BitmapImage(new Uri(AppBranding.IconPackUri, UriKind.Absolute));
     }
 
     private bool IsPaletteOpen => PaletteOverlay.Visibility == Visibility.Visible;
