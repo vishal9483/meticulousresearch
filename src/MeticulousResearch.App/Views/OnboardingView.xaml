@@ -12,7 +12,14 @@
           x:Name="OnboardingRoot" AutomationProperties.AutomationId="OnboardingRoot">
         <Border Padding="32" MaxWidth="640" VerticalAlignment="Center" HorizontalAlignment="Center">
             <StackPanel>
-                <TextBlock Text="Welcome to MeticulousResearch" FontSize="26" FontWeight="SemiBold"
+                <!-- Brand identity: the shared application icon + navy palette so first run reads as
+                     the finished product (app-branding-icon/phase.md, SPEC §3.7). -->
+                <Image Source="{DynamicResource AppIcon}" Width="72" Height="72"
+                       HorizontalAlignment="Left" Margin="0,0,0,16"
+                       AutomationProperties.AutomationId="OnboardingBrandIcon"
+                       AutomationProperties.Name="Application icon" />
+                <TextBlock Text="{Binding ProductName}" FontSize="26" FontWeight="SemiBold"
+                           Foreground="{DynamicResource OnSurfaceBrush}"
                            AutomationProperties.AutomationId="WelcomeTitle" />
                 <TextBlock Margin="0,12,0,0" TextWrapping="Wrap"
                            Text="Generate rigorous, source-grounded research documents with Claude."
