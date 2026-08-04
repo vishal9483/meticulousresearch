@@ -28,7 +28,10 @@ public sealed class ShellUiFixture : IDisposable
     /// <summary>Resolves the built App exe next to the test output (same Debug/Release config).</summary>
     private static string ResolveAppExePath()
     {
-        var config = Path.GetFileName(Path.GetDirectoryName(AppContext.BaseDirectory)!.TrimEnd(Path.DirectorySeparatorChar));
+        // BaseDirectory is tests/.../bin/<config>/net8.0-windows/ (with a trailing separator).
+        // Trim the separator, drop the tfm segment, then read <config> (Debug/Release).
+        var tfmDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+        var config = Path.GetFileName(Path.GetDirectoryName(tfmDir)!);
         // tests/.../bin/<config>/net8.0-windows -> repo root
         var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
         var exe = Path.Combine(repoRoot, "src", "MeticulousResearch.App", "bin", config,
