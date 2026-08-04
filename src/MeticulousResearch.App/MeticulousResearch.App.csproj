@@ -1,9 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- installer (M6, SPEC §8): single-source the app version from installer/version.props so the
+       packaged MSIX manifest, the executable, and the About screen all report the same version. -->
+  <Import Project="..\..\installer\version.props" />
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- Flow the single-source version into the assembly; strip the +sha metadata so the
+         informational version the About screen reads matches the manifest exactly. -->
+    <Version>$(MeticulousVersion)</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- app-branding-icon (M6, SPEC §3.7): the single multi-resolution application icon Windows
          uses for the window, taskbar, and Start Menu; the installer reuses the same asset. -->
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
