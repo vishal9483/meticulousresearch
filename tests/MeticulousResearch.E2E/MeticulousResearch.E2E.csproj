@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    End-to-end journey suite (E2E-TEST-SUITE.md §6). The @e2e @unit journeys orchestrate the real
+    Core services + view-models with a scripted FakeChatService and run in the headless CI gate
+    (Category!=ui&Category!=manual). FlaUI @e2e, @manual and @requires-key journeys are represented
+    as skipped, Category-tagged scenarios (they belong to the nightly/release FlaUI + live gates).
+    net8.0-windows so the suite can reference the WPF App project's view-models.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MeticulousResearch.App\MeticulousResearch.App.csproj" />
+    <ProjectReference Include="..\..\src\MeticulousResearch.Core\MeticulousResearch.Core.csproj" />
+    <ProjectReference Include="..\MeticulousResearch.TestSupport\MeticulousResearch.TestSupport.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
