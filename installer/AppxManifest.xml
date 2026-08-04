@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  installer/phase.md (M6, SPEC §8, §3.7): MSIX package manifest for the signed Windows installer.
+  MSIX is chosen (over WiX/MSI) for clean per-user install/uninstall, data preservation, and an
+  update story update-notice can build on (see installer/README.md for the recorded decision).
+
+  Branding is single-sourced: the DisplayName / Application name carry the product name
+  "MeticulousResearch Desktop" (Core AssemblyAppInfo.ProductNameValue) and the logos reuse the
+  app-branding-icon asset (Assets/AppIcon.ico). The Identity Version is kept in lock-step with
+  installer/version.props and the app assembly version; the installer @unit test enforces that.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
+
+  <!-- Version is 4-part per MSIX; the first three parts equal installer/version.props
+       MeticulousVersion (1.0.0). The publisher CN must match the code-signing certificate. -->
+  <Identity
+    Name="MeticulousResearch.Desktop"
+    Publisher="CN=MeticulousResearch"
+    Version="1.0.0.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>MeticulousResearch Desktop</DisplayName>
+    <PublisherDisplayName>MeticulousResearch</PublisherDisplayName>
+    <Logo>Assets\AppIcon.ico</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22000.0" MaxVersionTested="10.0.22631.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <!-- Per-user install; the Executable is the WPF app whose <ApplicationIcon> is the same asset. -->
+    <Application Id="MeticulousResearch" Executable="MeticulousResearch.App.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="MeticulousResearch Desktop"
+        Description="Generate research documents with Claude."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\AppIcon.ico"
+        Square44x44Logo="Assets\AppIcon.ico">
+        <uap:DefaultTile ShortName="MeticulousResearch" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <Capability Name="internetClient" />
+  </Capabilities>
+
+</Package>

@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- installer/phase.md (M6, SPEC §8): the single source of the app version. Both the packaged
+       app assembly (imported by src/MeticulousResearch.App/MeticulousResearch.App.csproj) and the
+       MSIX package manifest (installer/AppxManifest.xml) derive their version from this value, so
+       the installer, the executable, and the About screen always agree. The installer @unit
+       "versions match" test reads this file and asserts the manifest + assembly agree with it. -->
+  <PropertyGroup>
+    <MeticulousVersion>1.0.0</MeticulousVersion>
+  </PropertyGroup>
+
+</Project>
