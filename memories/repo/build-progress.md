@@ -61,3 +61,6 @@ command-palette-shortcuts: APPROVED after 1 attempt, merged into main (a1e499e p
 about-screen: APPROVED after 1 attempt, merged into main (737e0b5 pre-merge), gate=App107/Core454+1skip. Contract=Core.AppInfo IAppInfo (ProductName/Version/IconResource); AssemblyAppInfo reads AssemblyInformationalVersion. Downstream M6 app-branding-icon supplies final icon under 'AppIcon' resource key; update-notice has room below Version on AboutView. SettingsView links to About.
 
 == M5 COMPLETE: all 5 features (onboarding, empty-loading-error-states, accessibility, command-palette-shortcuts, about-screen) merged into main. Final gate=App107/Core454(+1 skip @requires-key). NOTE: M1 SQLite pool flake recurred once during empty-loading-error-states verify, green on rerun. MILESTONE GATE - awaiting human sign-off for M6. ==
+
+## M6 (in progress) base=main
+app-branding-icon: APPROVED after 1 attempt, merged into main (773e16f), gate=App113/Core454+1skip. Contract=Assets/AppIcon.ico via <ApplicationIcon> + 'AppIcon' WPF resource key (consumed by About+onboarding); product name single-sourced from Core AssemblyAppInfo.ProductNameValue, re-stamped as AssemblyProduct; App AppBranding (ProductName/WindowTitle/IconPackUri/IconAssetPath). Downstream installer+v1-acceptance consume icon asset+product name.
