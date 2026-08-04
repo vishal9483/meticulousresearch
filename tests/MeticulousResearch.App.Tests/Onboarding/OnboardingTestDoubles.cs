@@ -106,6 +106,7 @@ internal sealed class OnboardingInMemorySettings : ISettingsService
     public bool TelemetryEnabled { get; set; }
     public string? ApiBaseUrl { get; set; }
     public string? DataDirectory { get; set; }
+    public string? DismissedUpdateVersion { get; set; }
     public string ChatBackend { get; set; } = SettingsService.DefaultChatBackendValue;
     public event EventHandler? SettingsChanged;
     public void Raise() => SettingsChanged?.Invoke(this, EventArgs.Empty);

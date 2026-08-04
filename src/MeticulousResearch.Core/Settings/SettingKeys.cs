@@ -26,4 +26,7 @@ public static class SettingKeys
 
     /// <summary>The configured data directory.</summary>
     public const string DataDirectory = "data_directory";
+
+    /// <summary>The most recently dismissed update-notice version (update-notice consumes this).</summary>
+    public const string DismissedUpdateVersion = "dismissed_update_version";
 }

@@ -281,7 +281,21 @@ public static class ServiceConfiguration
         // About screen (about-screen/phase.md, SPEC §3.7): app identity + assembly-sourced version.
         services.AddSingleton<Core.AppInfo.IAppInfo>(_ =>
             new Core.AppInfo.AssemblyAppInfo(typeof(App).Assembly));
-        services.AddTransient<AboutViewModel>();
+
+        // Update notice (update-notice/phase.md, SPEC §8): a thin HTTP adapter fetches the latest
+        // advertised version; the comparison + dismissal memory live in Core.UpdateService. Failures
+        // resolve silently to "no notice" and are logged off-screen (§7.5, §9.1(10)).
+        services.AddSingleton<Core.Updates.ILatestVersionProvider>(sp =>
+            new Services.HttpLatestVersionProvider(sp.GetRequiredService<HttpClient>(), updateSourceUri: null));
+        services.AddSingleton<Core.Updates.IUpdateService>(sp => new Core.Updates.UpdateService(
+            sp.GetRequiredService<Core.AppInfo.IAppInfo>(),
+            sp.GetRequiredService<Core.Updates.ILatestVersionProvider>(),
+            sp.GetRequiredService<ISettingsService>(),
+            sp.GetRequiredService<IErrorLog>()));
+        services.AddTransient<AboutViewModel>(sp => new AboutViewModel(
+            sp.GetRequiredService<Core.AppInfo.IAppInfo>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<Core.Updates.IUpdateService>()));
 
         services.AddSingleton<MainWindow>();
 
