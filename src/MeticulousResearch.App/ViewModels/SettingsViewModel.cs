@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MeticulousResearch.App.Navigation;
 using MeticulousResearch.Core.Credentials;
 using MeticulousResearch.Core.Onboarding;
 using MeticulousResearch.Core.Security;
@@ -22,6 +23,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IKeyTester _keyTester;
     private readonly IDataDirectoryValidator _dataDirectoryValidator;
     private readonly IOnboardingState? _onboardingState;
+    private readonly INavigationService? _navigation;
 
     /// <summary>Creates the Settings view-model over its Core services.</summary>
     public SettingsViewModel(
@@ -30,7 +32,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ISettingsService settings,
         IKeyTester keyTester,
         IDataDirectoryValidator dataDirectoryValidator,
-        IOnboardingState? onboardingState = null)
+        IOnboardingState? onboardingState = null,
+        INavigationService? navigation = null)
     {
         _keyStore = keyStore ?? throw new ArgumentNullException(nameof(keyStore));
         _credentials = credentials ?? throw new ArgumentNullException(nameof(credentials));
@@ -38,6 +41,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _keyTester = keyTester ?? throw new ArgumentNullException(nameof(keyTester));
         _dataDirectoryValidator = dataDirectoryValidator ?? throw new ArgumentNullException(nameof(dataDirectoryValidator));
         _onboardingState = onboardingState;
+        _navigation = navigation;
 
         // Base URL: when the environment overrides it, show the effective value read-only.
         IsBaseUrlEnvironmentProvided = _credentials.IsBaseUrlFromEnvironment;
@@ -214,4 +218,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _onboardingState?.Reset();
         RerunOnboardingRequested?.Invoke(this, EventArgs.Empty);
     }
+
+    // --- About ---
+
+    /// <summary>
+    /// Opens the About screen from Settings (about-screen/phase.md, SPEC §4(7)). No-op when no
+    /// navigation service is available (window-free tests that don't exercise navigation).
+    /// </summary>
+    [RelayCommand]
+    public void OpenAbout() => _navigation?.NavigateTo<AboutViewModel>();
 }

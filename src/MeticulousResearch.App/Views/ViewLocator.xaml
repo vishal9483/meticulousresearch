@@ -30,6 +30,11 @@
         <views:SettingsView />
     </DataTemplate>
 
+    <!-- About screen (app identity, version). -->
+    <DataTemplate DataType="{x:Type vm:AboutViewModel}">
+        <views:AboutView />
+    </DataTemplate>
+
     <!-- First-run onboarding wizard (onboarding/phase.md, SPEC §3.8). -->
     <DataTemplate DataType="{x:Type vm:OnboardingViewModel}">
         <views:OnboardingView />

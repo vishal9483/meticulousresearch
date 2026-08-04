@@ -66,6 +66,11 @@
             <TextBlock Text="First-run onboarding" Margin="0,20,0,4" FontWeight="SemiBold" />
             <Button Content="Re-run onboarding" Command="{Binding RerunOnboardingCommand}"
                     HorizontalAlignment="Left" AutomationProperties.AutomationId="RerunOnboardingButton" />
+
+            <!-- About (about-screen/phase.md, SPEC §3.7, §4(7)) -->
+            <TextBlock Text="About" Margin="0,20,0,4" FontWeight="SemiBold" />
+            <Button Content="About" Command="{Binding OpenAboutCommand}"
+                    HorizontalAlignment="Left" AutomationProperties.AutomationId="OpenAboutButton" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

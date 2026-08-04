@@ -278,6 +278,11 @@ public static class ServiceConfiguration
         services.AddTransient<ThemeGalleryViewModel>();
         services.AddTransient<SettingsViewModel>();
 
+        // About screen (about-screen/phase.md, SPEC §3.7): app identity + assembly-sourced version.
+        services.AddSingleton<Core.AppInfo.IAppInfo>(_ =>
+            new Core.AppInfo.AssemblyAppInfo(typeof(App).Assembly));
+        services.AddTransient<AboutViewModel>();
+
         services.AddSingleton<MainWindow>();
 
         return services;
