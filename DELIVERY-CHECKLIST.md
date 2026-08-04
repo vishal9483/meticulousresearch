@@ -161,9 +161,24 @@ git tag -a v1.0.0 -m "MeticulousResearch Desktop v1.0.0"
 
 ---
 
+## Known issues / residual risk
+
+- **Flaky Core test (SQLite pool-clear race).** During this pass one Core test failed intermittently
+  (467/469) then passed on re-run (468/469). The dedicated fix (`fix/sqlite-pool-clear-race`,
+  commit `ca364c5`) is **already merged** to `main`, yet the flake still reproduced (~1 in 3 runs).
+  Before tagging, run the headless gate a few times back-to-back and, if it recurs, investigate the
+  remaining per-store pool-clear / parallel-collection race. Do not tag on a red or flaky gate.
+
+  ```powershell
+  1..5 | ForEach-Object { dotnet test MeticulousResearch.sln -c Debug --filter "Category!=ui&Category!=manual" }
+  ```
+
+---
+
 ## What was done automatically in this pass
 
 - Committed the E2E journey suite (J00–J24), `E2E-TEST-SUITE.md`, and the `.sln` registration to
   branch `test/e2e-suite`.
 - Fixed `ShellUiFixture.ResolveAppExePath` so the FlaUI harness launches the built app.
-- Verified: build clean; headless gate green (646 passed / 2 intentional skips).
+- Verified: build clean; headless gate green (646 passed / 2 intentional skips), with the flaky
+  Core test noted above.
