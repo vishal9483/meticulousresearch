@@ -64,3 +64,4 @@ about-screen: APPROVED after 1 attempt, merged into main (737e0b5 pre-merge), ga
 
 ## M6 (in progress) base=main
 app-branding-icon: APPROVED after 1 attempt, merged into main (773e16f), gate=App113/Core454+1skip. Contract=Assets/AppIcon.ico via <ApplicationIcon> + 'AppIcon' WPF resource key (consumed by About+onboarding); product name single-sourced from Core AssemblyAppInfo.ProductNameValue, re-stamped as AssemblyProduct; App AppBranding (ProductName/WindowTitle/IconPackUri/IconAssetPath). Downstream installer+v1-acceptance consume icon asset+product name.
+installer: APPROVED after 1 attempt, merged into main (4ec9cc2), gate=App114/Core454+1skip. Contract=MSIX; installer/version.props MeticulousVersion is single version source consumed by update-notice + v1-acceptance; manifest DisplayName+logos reuse app-branding-icon product name/icon. NOTE: worker saw a Core EditWithClaude timing flake once; green on my independent + post-merge runs.
