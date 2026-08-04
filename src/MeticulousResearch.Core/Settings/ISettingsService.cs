@@ -29,6 +29,13 @@ public interface ISettingsService
     string? DataDirectory { get; set; }
 
     /// <summary>
+    /// The most recently dismissed update-notice version, or <c>null</c> when none has been
+    /// dismissed. A dismissed version is not re-notified until a strictly-newer version appears
+    /// (update-notice/phase.md, SPEC §8).
+    /// </summary>
+    string? DismissedUpdateVersion { get; set; }
+
+    /// <summary>
     /// The selected generation backend preference consumed by <c>ai-gateway</c>: <c>sidecar</c>
     /// (the default) or <c>direct-api</c>. Resolved to a concrete backend by <c>IChatBackendFactory</c>.
     /// </summary>

@@ -89,6 +89,13 @@ public sealed class SettingsService : ISettingsService
     }
 
     /// <inheritdoc />
+    public string? DismissedUpdateVersion
+    {
+        get => GetNullable(SettingKeys.DismissedUpdateVersion);
+        set => SetString(SettingKeys.DismissedUpdateVersion, value);
+    }
+
+    /// <inheritdoc />
     public string ChatBackend
     {
         get => GetString(SettingKeys.ChatBackend, DefaultChatBackendValue);

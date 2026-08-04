@@ -2,10 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+             xmlns:controls="clr-namespace:MeticulousResearch.App.Controls"
              d:DataContext="{d:DesignInstance vm:AboutViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
     <!-- About screen (about-screen/phase.md, SPEC §3.7): app icon, product name, version. Styled
          with design-system tokens so no default WPF chrome shows (§9.1(10)). Room is left below the
          version for update-notice (M6) to surface "update available". -->
@@ -30,6 +34,25 @@
                        HorizontalAlignment="Center" Margin="0,8,0,0"
                        Foreground="{DynamicResource OnSurfaceBrush}"
                        AutomationProperties.AutomationId="AboutVersion" />
+
+            <!-- Non-blocking update notice (update-notice/phase.md, SPEC §8). Uses the design-system
+                 themed toast chrome; collapsed unless a newer version is advertised, and dismissible
+                 without leaving the screen — it never blocks work (§1.3, §3.7). -->
+            <controls:ThemedToast Severity="info"
+                                  HorizontalAlignment="Center" Margin="0,16,0,0"
+                                  AutomationProperties.AutomationId="UpdateNotice"
+                                  Visibility="{Binding IsUpdateNoticeVisible,
+                                               Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding UpdateNoticeText}"
+                               VerticalAlignment="Center"
+                               AutomationProperties.AutomationId="UpdateNoticeText"
+                               Foreground="{DynamicResource OnSurfaceBrush}" />
+                    <Button Content="Dismiss" Margin="12,0,0,0"
+                            Command="{Binding DismissUpdateNoticeCommand}"
+                            AutomationProperties.AutomationId="UpdateNoticeDismissButton" />
+                </StackPanel>
+            </controls:ThemedToast>
 
             <Button Content="Close" Command="{Binding CloseCommand}"
                     HorizontalAlignment="Center" Margin="0,24,0,0"
