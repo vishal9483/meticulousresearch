@@ -1,0 +1,39 @@
+<UserControl x:Class="MeticulousResearch.App.Views.AboutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+             d:DataContext="{d:DesignInstance vm:AboutViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <!-- About screen (about-screen/phase.md, SPEC §3.7): app icon, product name, version. Styled
+         with design-system tokens so no default WPF chrome shows (§9.1(10)). Room is left below the
+         version for update-notice (M6) to surface "update available". -->
+    <Grid x:Name="AboutRoot" AutomationProperties.AutomationId="AboutRoot"
+          Background="{DynamicResource SurfaceBrush}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{StaticResource SpacingLg}">
+            <Image Source="{DynamicResource AppIcon}" Width="96" Height="96"
+                   HorizontalAlignment="Center"
+                   AutomationProperties.AutomationId="AboutAppIcon"
+                   AutomationProperties.Name="Application icon" />
+
+            <TextBlock Text="{Binding ProductName}"
+                       FontFamily="{StaticResource UiFontFamily}"
+                       FontSize="{StaticResource FontSizeTitle}" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" Margin="0,16,0,0"
+                       Foreground="{DynamicResource OnSurfaceBrush}"
+                       AutomationProperties.AutomationId="AboutProductName" />
+
+            <TextBlock Text="{Binding Version}"
+                       FontFamily="{StaticResource UiFontFamily}"
+                       FontSize="{StaticResource FontSizeBody}"
+                       HorizontalAlignment="Center" Margin="0,8,0,0"
+                       Foreground="{DynamicResource OnSurfaceBrush}"
+                       AutomationProperties.AutomationId="AboutVersion" />
+
+            <Button Content="Close" Command="{Binding CloseCommand}"
+                    HorizontalAlignment="Center" Margin="0,24,0,0"
+                    AutomationProperties.AutomationId="AboutCloseButton" />
+        </StackPanel>
+    </Grid>
+</UserControl>
