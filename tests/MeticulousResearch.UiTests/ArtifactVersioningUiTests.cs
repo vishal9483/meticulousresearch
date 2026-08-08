@@ -26,11 +26,15 @@ public sealed class ArtifactVersioningUiTests
     {
         var artifacts = OpenArtifactsView(_fixture.MainWindow);
 
-        // Open the artifact editor for the first artifact.
+        // Open the artifact editor for the seeded 3-version sample artifact (by name).
         var list = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("ArtifactsList"));
         Assert.NotNull(list);
-        var firstArtifact = list!.FindFirstDescendant(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.ListItem));
-        firstArtifact?.Click();
+        var sample = FlaUI.Core.Tools.Retry.WhileNull(
+            () => list!.FindFirstDescendant(cf => cf.ByName(
+                MeticulousResearch.Core.Onboarding.SampleContent.ArtifactTitle)),
+            System.TimeSpan.FromSeconds(10)).Result;
+        Assert.NotNull(sample);
+        sample!.Click();
 
         // The version history rail lists the versions.
         var rail = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("VersionHistoryRail"));

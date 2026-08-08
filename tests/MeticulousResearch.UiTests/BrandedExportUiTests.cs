@@ -36,13 +36,16 @@ public sealed class BrandedExportUiTests
         var formatPicker = editor.FindFirstDescendant(cf => cf.ByAutomationId("BrandedExportFormatPicker"))?.AsComboBox();
         Assert.NotNull(formatPicker);
         formatPicker!.Select("PDF");
+        formatPicker.Collapse();
 
         var previewButton = editor.FindFirstDescendant(cf => cf.ByAutomationId("BrandedExportPreviewButton"))?.AsButton();
         Assert.NotNull(previewButton);
-        previewButton!.Click();
+        previewButton!.Invoke();
 
         // A preview of the branded document is shown.
-        var preview = editor.FindFirstDescendant(cf => cf.ByAutomationId("BrandedExportPreview"));
+        var preview = FlaUI.Core.Tools.Retry.WhileNull(
+            () => editor.FindFirstDescendant(cf => cf.ByAutomationId("BrandedExportPreview")),
+            System.TimeSpan.FromSeconds(10)).Result;
         Assert.NotNull(preview);
 
         // I can confirm to save or cancel without writing a file.

@@ -17,7 +17,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -28,10 +30,15 @@
             <TextBlock Text="{Binding Headline}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#555" />
         </StackPanel>
 
-        <Button Grid.Row="1" Content="New artifact" Padding="12,6" Margin="0,16,0,0"
-                HorizontalAlignment="Left"
-                AutomationProperties.AutomationId="NewArtifactButton"
-                Command="{Binding NewArtifactCommand}" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,16,0,0">
+            <Button Content="New artifact" Padding="12,6"
+                    AutomationProperties.AutomationId="NewArtifactButton"
+                    Command="{Binding NewArtifactCommand}" />
+            <Button Content="Delete artifact" Padding="12,6" Margin="8,0,0,0"
+                    AutomationProperties.AutomationId="DeleteArtifactButton"
+                    Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Command="{Binding RequestDeleteArtifactCommand}" />
+        </StackPanel>
 
         <!-- Designed empty state. -->
         <ScrollViewer Grid.Row="2" Margin="0,24,0,0" VerticalAlignment="Top"
@@ -42,8 +49,8 @@
                        TextWrapping="Wrap" Foreground="#777" />
         </ScrollViewer>
 
-        <!-- Artifact list. -->
-        <ListBox Grid.Row="2" Margin="0,16,0,0"
+        <!-- Artifact list. Height-bounded so the editor panels below stay on-screen and reachable. -->
+        <ListBox Grid.Row="2" Margin="0,16,0,0" MaxHeight="160"
                  AutomationProperties.AutomationId="ArtifactsList"
                  ItemsSource="{Binding Artifacts}"
                  SelectedItem="{Binding SelectedArtifact, Mode=TwoWay}"
@@ -58,41 +65,87 @@
             </ListBox.ItemTemplate>
         </ListBox>
 
+        <!-- Version-history rail for the selected artifact (SPEC §3.4): lists all versions, the
+             current one marked. The ItemsControl surfaces the rail id; each row is a surfacing
+             TextBlock so FindAll(VersionHistoryItem) sees every version. -->
+        <ItemsControl Grid.Row="3" Margin="0,12,0,0"
+                      AutomationProperties.AutomationId="VersionHistoryRail"
+                      ItemsSource="{Binding Versions}"
+                      Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                        <TextBlock AutomationProperties.AutomationId="VersionHistoryItem"
+                                   Text="{Binding Label}" />
+                        <TextBlock AutomationProperties.AutomationId="CurrentVersionMarker"
+                                   Text="  (current)" FontWeight="SemiBold" Foreground="#2E7D32"
+                                   Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Delete-confirmation prompt: nothing is deleted until confirmed. The ScrollViewer
+             surfaces the id and its Visibility toggle keeps it out of the UIA tree until Delete
+             is chosen. -->
+        <ScrollViewer Grid.Row="4" Margin="0,12,0,0"
+                      VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                      AutomationProperties.AutomationId="DeleteArtifactConfirmDialog"
+                      Visibility="{Binding IsConfirmingDelete, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Padding="8" CornerRadius="4" BorderBrush="#C0392B" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Delete artifact? This removes it and all of its versions and cannot be undone."
+                               TextWrapping="Wrap" AutomationProperties.Name="Delete artifact?" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Delete" Padding="10,4"
+                                AutomationProperties.AutomationId="ConfirmDeleteArtifactButton"
+                                Command="{Binding ConfirmDeleteArtifactCommand}" />
+                        <Button Content="Cancel" Padding="10,4" Margin="8,0,0,0"
+                                AutomationProperties.AutomationId="CancelDeleteArtifactButton"
+                                Command="{Binding CancelDeleteArtifactCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
         <!-- Edit with Claude prompt bar (SPEC §3.4, §9.1(5)): appears when an artifact is selected.
              A follow-up instruction input, a per-edit model selector, a streaming preview, and a
-             commit/keep action. Errors surface inline; a successful edit commits a new version. -->
-        <Border Grid.Row="3" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
-                AutomationProperties.AutomationId="EditWithClaudeBar"
-                Visibility="{Binding EditWithClaude, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
-            <StackPanel DataContext="{Binding EditWithClaude}">
-                <TextBlock Text="Edit with Claude" FontWeight="SemiBold" />
-                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <TextBox Width="360"
-                             AutomationProperties.AutomationId="EditWithClaudeInstruction"
-                             Text="{Binding Instruction, UpdateSourceTrigger=PropertyChanged}" />
-                    <ComboBox Width="200" Margin="8,0,0,0"
-                              AutomationProperties.AutomationId="EditWithClaudeModelPicker"
-                              ItemsSource="{Binding ModelPicker.Tiers}"
-                              DisplayMemberPath="Name" />
-                    <Button Content="Edit" Margin="8,0,0,0"
-                            AutomationProperties.AutomationId="EditWithClaudeButton"
-                            Command="{Binding EditCommand}" />
+             commit/keep action. The ScrollViewer surfaces the bar id (a Border does not). -->
+        <ScrollViewer Grid.Row="5" Margin="0,16,0,0"
+                      VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                      AutomationProperties.AutomationId="EditWithClaudeBar"
+                      Visibility="{Binding HasEditWithClaude, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border BorderThickness="1" BorderBrush="#DDD" Padding="12">
+                <StackPanel DataContext="{Binding EditWithClaude}">
+                    <TextBlock Text="Edit with Claude" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBox Width="360"
+                                 AutomationProperties.AutomationId="EditWithClaudeInstruction"
+                                 Text="{Binding Instruction, UpdateSourceTrigger=PropertyChanged}" />
+                        <ComboBox Width="200" Margin="8,0,0,0"
+                                  AutomationProperties.AutomationId="EditWithClaudeModelPicker"
+                                  ItemsSource="{Binding ModelPicker.Tiers}"
+                                  DisplayMemberPath="Name" />
+                        <Button Content="Edit" Margin="8,0,0,0"
+                                AutomationProperties.AutomationId="EditWithClaudeButton"
+                                Command="{Binding EditCommand}" />
+                    </StackPanel>
+                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="EditWithClaudePreview"
+                               Text="{Binding PreviewContent}" />
+                    <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#C00"
+                               AutomationProperties.AutomationId="EditWithClaudeError"
+                               Text="{Binding ErrorMessage}" />
                 </StackPanel>
-                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
-                           AutomationProperties.AutomationId="EditWithClaudePreview"
-                           Text="{Binding PreviewContent}" />
-                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#C00"
-                           AutomationProperties.AutomationId="EditWithClaudeError"
-                           Text="{Binding ErrorMessage}" />
-            </StackPanel>
-        </Border>
+            </Border>
+        </ScrollViewer>
 
         <!-- Diff mode (SPEC §3.4): appears when an artifact is selected. Two version pickers,
              side-by-side / inline toggle, highlighted changes, and a disabled hint when only one
-             version exists. -->
-        <Border Grid.Row="4" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
+             version exists. Placed last (tallest panel) so the bars above stay reachable. -->
+        <Border Grid.Row="7" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
                 AutomationProperties.AutomationId="ArtifactDiffPanel"
-                Visibility="{Binding Diff, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+                Visibility="{Binding HasDiff, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel DataContext="{Binding Diff}">
                 <!-- Disabled hint (single version). -->
                 <TextBlock AutomationProperties.AutomationId="DiffDisabledHint"
@@ -108,13 +161,25 @@
                                   AutomationProperties.AutomationId="DiffBasePicker"
                                   ItemsSource="{Binding Versions}"
                                   SelectedItem="{Binding BaseVersion, Mode=TwoWay}"
-                                  DisplayMemberPath="VersionNo" />
+                                  DisplayMemberPath="VersionNo">
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem">
+                                    <Setter Property="AutomationProperties.Name" Value="{Binding VersionNo}" />
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
+                        </ComboBox>
                         <TextBlock Text="Compare" VerticalAlignment="Center" Margin="16,0,6,0" />
                         <ComboBox Width="220"
                                   AutomationProperties.AutomationId="DiffComparePicker"
                                   ItemsSource="{Binding Versions}"
                                   SelectedItem="{Binding CompareVersion, Mode=TwoWay}"
-                                  DisplayMemberPath="VersionNo" />
+                                  DisplayMemberPath="VersionNo">
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem">
+                                    <Setter Property="AutomationProperties.Name" Value="{Binding VersionNo}" />
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
+                        </ComboBox>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -126,33 +191,38 @@
                                 Command="{Binding ShowInlineCommand}" />
                     </StackPanel>
 
-                    <!-- Side-by-side presentation: base left, compare right. -->
-                    <Grid Margin="0,12,0,0"
-                          AutomationProperties.AutomationId="DiffSideBySideView"
-                          Visibility="{Binding IsSideBySide, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ItemsControl Grid.Column="0" Margin="0,0,6,0"
-                                      AutomationProperties.AutomationId="DiffLeftPane"
-                                      ItemsSource="{Binding LeftSegments}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <ItemsControl Grid.Column="1" Margin="6,0,0,0"
-                                      AutomationProperties.AutomationId="DiffRightPane"
-                                      ItemsSource="{Binding RightSegments}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
+                    <!-- Side-by-side presentation: base left, compare right. The ScrollViewer
+                         surfaces the view id (a Grid does not) and bounds the height so the panels
+                         below stay reachable. -->
+                    <ScrollViewer Margin="0,12,0,0" MaxHeight="200"
+                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                  AutomationProperties.AutomationId="DiffSideBySideView"
+                                  Visibility="{Binding IsSideBySide, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ItemsControl Grid.Column="0" Margin="0,0,6,0"
+                                          AutomationProperties.AutomationId="DiffLeftPane"
+                                          ItemsSource="{Binding LeftSegments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl Grid.Column="1" Margin="6,0,0,0"
+                                          AutomationProperties.AutomationId="DiffRightPane"
+                                          ItemsSource="{Binding RightSegments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
                                     <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Grid>
+                    </ScrollViewer>
 
                     <!-- Inline presentation: merged single pane. -->
                     <ItemsControl Margin="0,12,0,0"
@@ -171,9 +241,9 @@
 
         <!-- Branded export menu (SPEC §3.4.2, §9.1(6)): pick a format + preset, preview the branded
              document, then confirm to save or cancel without writing a file. -->
-        <Border Grid.Row="5" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
+        <Border Grid.Row="6" Margin="0,16,0,0" BorderThickness="1" BorderBrush="#DDD" Padding="12"
                 AutomationProperties.AutomationId="BrandedExportBar"
-                Visibility="{Binding Export, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+                Visibility="{Binding HasExport, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel DataContext="{Binding Export}">
                 <Button Content="Branded export"
                         HorizontalAlignment="Left"

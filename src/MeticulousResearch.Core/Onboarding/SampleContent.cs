@@ -57,4 +57,38 @@ public static class SampleContent
         + "## Outlook\n"
         + "Continued cost reductions and infrastructure build-out are expected to sustain growth "
         + "through 2026.\n";
+
+    /// <summary>A second, lightly-revised version of the sample report (adds a sizing figure).</summary>
+    public const string MarketResearchReportV2 =
+        "# Market Research Report: EV Battery Market 2026\n\n"
+        + "## Executive Summary\n"
+        + "The EV battery market continues a multi-year expansion, underpinned by cost declines and "
+        + "supportive policy. The 2026 market is estimated near $130B. This example report "
+        + "demonstrates how MeticulousResearch grounds a deliverable in your project resources.\n\n"
+        + "## Market Overview\n"
+        + "Demand growth is broad-based across passenger and commercial segments, with NMC and LFP "
+        + "chemistries serving distinct cost/performance niches.\n\n"
+        + "## Competitive Landscape\n"
+        + "Capacity remains concentrated among a few incumbents, while challengers pursue LFP cost "
+        + "leadership and solid-state roadmaps.\n\n"
+        + "## Outlook\n"
+        + "Continued cost reductions and infrastructure build-out are expected to sustain growth "
+        + "through 2026.\n";
+
+    /// <summary>A third, current version of the sample report (sharpens the outlook section).</summary>
+    public const string MarketResearchReportV3 =
+        "# Market Research Report: EV Battery Market 2026\n\n"
+        + "## Executive Summary\n"
+        + "The EV battery market continues a multi-year expansion, underpinned by cost declines and "
+        + "supportive policy. The 2026 market is estimated near $130B. This example report "
+        + "demonstrates how MeticulousResearch grounds a deliverable in your project resources.\n\n"
+        + "## Market Overview\n"
+        + "Demand growth is broad-based across passenger and commercial segments, with NMC and LFP "
+        + "chemistries serving distinct cost/performance niches.\n\n"
+        + "## Competitive Landscape\n"
+        + "Capacity remains concentrated among a few incumbents, while challengers pursue LFP cost "
+        + "leadership and solid-state roadmaps.\n\n"
+        + "## Outlook\n"
+        + "Continued cost reductions and infrastructure build-out are expected to sustain double-digit "
+        + "annual growth through 2026, with LFP capturing a growing share of entry-level demand.\n";
 }

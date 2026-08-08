@@ -90,21 +90,47 @@ public sealed class ArtifactDiffUiTests
     [Fact]
     public void Diff_mode_is_unavailable_with_a_single_version()
     {
-        var artifacts = OpenArtifactsView(_fixture.MainWindow);
-        OpenFirstArtifact(artifacts);
+        // A fresh, empty project + one brand-new artifact has exactly one version.
+        var artifacts = OpenEmptyArtifactsView(_fixture.MainWindow);
+        var newButton = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("NewArtifactButton"))?.AsButton();
+        Assert.NotNull(newButton);
+        newButton!.Click();
 
         // Diff mode is offered as disabled with a hint that two versions are required.
-        var hint = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("DiffDisabledHint"));
+        var hint = FlaUI.Core.Tools.Retry.WhileNull(
+            () => artifacts.FindFirstDescendant(cf => cf.ByAutomationId("DiffDisabledHint")),
+            System.TimeSpan.FromSeconds(10)).Result;
         Assert.NotNull(hint);
     }
 
-    /// <summary>Opens the artifact editor for the first artifact in the list.</summary>
+    /// <summary>
+    /// Creates and opens a fresh empty project, then switches to its Artifacts section — used by the
+    /// single-version scenario (an artifact with only one version).
+    /// </summary>
+    private static AutomationElement OpenEmptyArtifactsView(Window window)
+    {
+        var workspace = ShellUiFlow.OpenEmptyProject(window);
+
+        var navItem = workspace.FindFirstDescendant(cf => cf.ByName("Artifacts"))?.AsRadioButton();
+        Assert.NotNull(navItem);
+        navItem!.Click();
+
+        var center = window.FindFirstDescendant(cf => cf.ByAutomationId("CenterPane"));
+        Assert.NotNull(center);
+        return center!;
+    }
+
+    /// <summary>Opens the artifact editor for the seeded 3-version sample artifact (by name).</summary>
     private static void OpenFirstArtifact(AutomationElement artifacts)
     {
         var list = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("ArtifactsList"));
         Assert.NotNull(list);
-        var firstArtifact = list!.FindFirstDescendant(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.ListItem));
-        firstArtifact?.Click();
+        var sample = FlaUI.Core.Tools.Retry.WhileNull(
+            () => list!.FindFirstDescendant(cf => cf.ByName(
+                MeticulousResearch.Core.Onboarding.SampleContent.ArtifactTitle)),
+            System.TimeSpan.FromSeconds(10)).Result;
+        Assert.NotNull(sample);
+        sample!.Click();
     }
 
     /// <summary>
