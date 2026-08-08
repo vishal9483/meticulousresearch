@@ -34,28 +34,34 @@ Custom|DashboardRoot|
 Pane||
 Text||Dashboard
 Text||Project overview: resources, artifacts, activity and cost.
-Text|ResourceCount|4
+Text|ResourceCount|3
 Text||Resources
-Text|ConversationCount|0
+Text|ConversationCount|1
 Text||Conversations
 Text|ArtifactCount|1
 Text||Artifacts
 Text||Last activity: 
-Text|LastActivity|8/8/2026 5:57 AM +00:00
+Text|LastActivity|8/8/2026 6:30 AM +00:00
+Pane|ConsolidatedCostPanel|
 Text||Cost
-Text|CostTotal|$0.00
+Text|CostTotal|$0.01
+Pane|CostBySource|
 Text||Conversations: 
-Text|CostConversations|$0.00
+Text|CostConversations|$0.01
 Text||   Artifacts: 
 Text|CostArtifacts|$0.00
 Text||By model
 List|CostByModel|
+DataItem||ModelSpend { Model = claude-opus-5, Cost = 0.0135, CostDisplay = $0.01 }
+Text||claude-opus-5
+Text||$0.01
+Pane|CostByWindow|
 Text||Today: 
-Text|CostToday|0
+Text|CostToday|0.0135
 Text||   This week: 
-Text|CostWeek|0
+Text|CostWeek|0.0135
 Text||   All time: 
-Text|CostAllTime|0
+Text|CostAllTime|0.0135
 Button|ExportUsageCsvButton|Export usage CSV
 Text||Export usage CSV
 Text|ExportUsageCsvConfirmation|
