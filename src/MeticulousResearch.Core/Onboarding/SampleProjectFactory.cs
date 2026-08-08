@@ -40,21 +40,6 @@ public sealed class SampleProjectFactory : ISampleProjectFactory
         _resources.AddText(project.Id, SampleContent.ResourceOneTitle, SampleContent.ResourceOneText);
         _resources.AddText(project.Id, SampleContent.ResourceTwoTitle, SampleContent.ResourceTwoText);
 
-        // A bundled image resource (image-vision-caption, SPEC §3.2.1). AddImage copies the original
-        // into the project; caption-on-add is a no-op in production (disabled by default) and caches
-        // a deterministic caption under the @ui harness. The temp source is deleted after the copy.
-        var imagePath = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"sample-image-{Guid.NewGuid():N}.png");
-        System.IO.File.WriteAllBytes(imagePath, SampleContent.ImageBytes);
-        try
-        {
-            _resources.AddImage(project.Id, imagePath);
-        }
-        finally
-        {
-            try { System.IO.File.Delete(imagePath); } catch { /* best-effort cleanup */ }
-        }
-
         var artifact = _artifacts.CreateFromContent(
             project.Id,
             ArtifactTypes.Doc,

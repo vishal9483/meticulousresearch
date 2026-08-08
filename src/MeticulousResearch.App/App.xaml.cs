@@ -39,7 +39,19 @@ public partial class App : Application
         {
             var projects = _host.Services.GetRequiredService<MeticulousResearch.Core.Projects.IProjectService>();
             if (projects.List(includeArchived: true).Count == 0)
-                _host.Services.GetRequiredService<MeticulousResearch.Core.Onboarding.ISampleProjectFactory>().CreateSampleProject();
+            {
+                var sample = _host.Services.GetRequiredService<MeticulousResearch.Core.Onboarding.ISampleProjectFactory>().CreateSampleProject();
+
+                // @ui only: add a captioned image resource (image-vision-caption, SPEC §3.2.1) so the
+                // Resources preview has a thumbnail + cached caption to show. The @ui resource service
+                // is registered with caption-on-add + a deterministic offline captioner.
+                var resources = _host.Services.GetRequiredService<MeticulousResearch.Core.Resources.IResourceService>();
+                var imagePath = System.IO.Path.Combine(
+                    System.IO.Path.GetTempPath(), $"sample-image-{System.Guid.NewGuid():N}.png");
+                System.IO.File.WriteAllBytes(imagePath, MeticulousResearch.Core.Onboarding.SampleContent.ImageBytes);
+                try { resources.AddImage(sample.Id, imagePath); }
+                finally { try { System.IO.File.Delete(imagePath); } catch { /* best-effort */ } }
+            }
 
             // A small context budget so the seeded resources genuinely exceed it, exercising the
             // composer's over-budget warning deterministically (context-budget, SPEC §3.2).
