@@ -245,18 +245,20 @@
 
             <!-- "Retrying…" indicator (rate-limit-backoff, SPEC §8): a non-alarming, attempt-numbered
                  banner shown while a rate-limited / transient turn is being retried; it is not an
-                 error dialog and never shows a raw status code. Clears on resolution. -->
-            <Border x:Name="RetryingIndicator" VerticalAlignment="Top" HorizontalAlignment="Stretch"
-                    Margin="0,0,0,8" Padding="10,6" CornerRadius="6"
-                    Background="#EAF3FF" BorderBrush="#9CC3F0" BorderThickness="1"
-                    DataContext="{Binding RetryStatus}"
-                    AutomationProperties.AutomationId="RetryingIndicator"
-                    AutomationProperties.Name="{Binding StatusText}"
-                    Visibility="{Binding IsRetrying, Converter={StaticResource BoolToVisibilityConverter}}">
-                <TextBlock VerticalAlignment="Center" Foreground="#1F5FA8"
-                           AutomationProperties.AutomationId="RetryingIndicatorText"
-                           Text="{Binding StatusText}" TextWrapping="Wrap" />
-            </Border>
+                 error dialog and never shows a raw status code. Clears on resolution. Wrapped in a
+                 ScrollViewer so the container id surfaces to UIA (a Border does not). -->
+            <ScrollViewer VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                          VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                          DataContext="{Binding RetryStatus}"
+                          AutomationProperties.AutomationId="RetryingIndicator"
+                          Visibility="{Binding IsRetrying, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Border Padding="10,6" CornerRadius="6"
+                        Background="#EAF3FF" BorderBrush="#9CC3F0" BorderThickness="1">
+                    <TextBlock VerticalAlignment="Center" Foreground="#1F5FA8"
+                               AutomationProperties.AutomationId="RetryingIndicatorText"
+                               Text="{Binding StatusText}" TextWrapping="Wrap" />
+                </Border>
+            </ScrollViewer>
 
             <!-- Designed empty state, shown only when the thread has no turns. Wrapped in a
                  ScrollViewer so the container id surfaces to UIA (a StackPanel does not). -->

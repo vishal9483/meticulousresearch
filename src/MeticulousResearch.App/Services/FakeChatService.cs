@@ -11,10 +11,21 @@ namespace MeticulousResearch.App.Services;
 /// </summary>
 internal sealed class FakeChatService : IChatService
 {
+    private readonly HashSet<string> _rateLimitedMessages = new();
+
     public async IAsyncEnumerable<ChatEvent> Ask(
         ChatAskContext context,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        // A prompt mentioning rate limits faults once with a retryable 429 so the backoff layer
+        // surfaces the non-alarming "retrying…" indicator; the automatic retry then succeeds.
+        var message = context.UserMessage ?? "";
+        if (message.Contains("rate limit", StringComparison.OrdinalIgnoreCase) && _rateLimitedMessages.Add(message))
+        {
+            yield return new ChatFaulted(ChatErrorKind.RateLimited, Retryable: true, Message: "rate limited");
+            yield break;
+        }
+
         var parts = new[] { "Based on the in-scope resources, ", "here is a grounded answer ", "to your question." };
         foreach (var part in parts)
         {
