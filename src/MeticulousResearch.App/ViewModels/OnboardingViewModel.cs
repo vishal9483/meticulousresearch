@@ -165,6 +165,9 @@ public sealed partial class OnboardingViewModel : ViewModelBase
 
     // ----- Welcome step -----
 
+    /// <summary>The product name shown on the branded Welcome title (single-sourced brand name).</summary>
+    public string ProductName => MeticulousResearch.App.Branding.AppBranding.ProductName;
+
     /// <summary>The privacy posture shown on the Welcome step (local-first).</summary>
     public string PrivacyStatement =>
         "Your data stays on this machine. MeticulousResearch is local-first — projects, resources, "

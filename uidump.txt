@@ -3,6 +3,105 @@ MenuBar|SystemMenuBar|System
 Button|Minimize-Restore|Minimize
 Button|Maximize-Restore|Restore
 Button|Close|Close
+Pane|AppSurface|
+Custom|ThemeGallery|
+Pane||
+Text||Design System
+Button|GalleryButton|Primary action
+Text||Primary action
+Edit|GalleryTextBox|
+ComboBox|GalleryComboBox|
+DataGrid|GalleryDataGrid|
+Header|PART_ColumnHeadersPresenter|
+HeaderItem||Token
+Text||Token
+Thumb|PART_RightHeaderGripper|
+HeaderItem||Value
+Text||Value
+Thumb|PART_LeftHeaderGripper|
+Thumb|PART_RightHeaderGripper|
+DataItem||GalleryRow { Token = Primary navy, Value = #1B2A4A }
+HeaderItem||
+Thumb|PART_BottomHeaderGripper|
+Custom||Primary navy
+Text||Primary navy
+Custom||#1B2A4A
+Text||#1B2A4A
+DataItem||GalleryRow { Token = Accent, Value = #2E5AAC }
+HeaderItem||
+Thumb|PART_TopHeaderGripper|
+Thumb|PART_BottomHeaderGripper|
+Custom||Accent
+Text||Accent
+Custom||#2E5AAC
+Text||#2E5AAC
+DataItem||GalleryRow { Token = Surface, Value = #FFFFFF }
+HeaderItem||
+Thumb|PART_TopHeaderGripper|
+Thumb|PART_BottomHeaderGripper|
+Custom||Surface
+Text||Surface
+Custom||#FFFFFF
+Text||#FFFFFF
+Pane|GalleryDialog|Dialogs use the themed chrome.
+Text||Dialogs use the themed chrome.
+Pane|GalleryToast|Toasts use the themed chrome.
+Text||Toasts use the themed chrome.
+ScrollBar|VerticalScrollBar|
+Button|PART_LineUpButton|
+Button|PART_LineDownButton|
+Custom|OnboardingRoot|
+Image|OnboardingBrandIcon|Application icon
+Text|WelcomeTitle|MeticulousResearch Desktop
+Text|ProductIntro|Generate rigorous, source-grounded research documents with Claude.
+Text|PrivacyStatement|Your data stays on this machine. MeticulousResearch is local-first — projects, resources, and generated documents live in your data directory, not in the cloud.
+Text|DataLocation|Your data is stored in: C:\Users\vhanakaw\AppData\Local\Temp\MeticulousResearch-uitests-70ae3252e09b4cd68e997780faf1eeab
+Button|OnboardingBackButton|Back
+Text||Back
+Button|OnboardingNextButton|Next
+Text||Next
+Button|OnboardingSkipButton|Skip
+Text||Skip
+Custom|AppSettingsRoot|
+Pane||
+Text||Settings
+Text||API key
+Edit|ApiKeyInput|
+Button|SaveKeyButton|Save key
+Text||Save key
+Button|TestKeyButton|Test key
+Text||Test key
+Button|ClearKeyButton|Clear key
+Text||Clear key
+Text|TestStatusMessage|
+Text||API base URL
+Edit|BaseUrlInput|
+Text|BaseUrlEnvIndicator|Set by the ANTHROPIC_BASE_URL environment variable.
+Button|SaveBaseUrlButton|Save base URL
+Text||Save base URL
+Text||Default model
+Edit|DefaultModelInput|
+Text||Context budget (tokens)
+Edit|ContextBudgetInput|
+CheckBox|TelemetryToggle|Send anonymous telemetry
+Text||Send anonymous telemetry
+Text||Data directory
+Edit|DataDirectoryInput|
+Button|SaveDataDirectoryButton|Save data directory
+Text||Save data directory
+Text|DataDirectoryError|That folder can't be written to. Choose a writable location.
+Text||First-run onboarding
+Button|RerunOnboardingButton|Re-run onboarding
+Text||Re-run onboarding
+Text||About
+Button|OpenAboutButton|About
+Text||About
+ScrollBar|VerticalScrollBar|
+Button|PART_LineUpButton|
+Button|PageUp|
+Button|PageDown|
+Thumb||
+Button|PART_LineDownButton|
 Text||MeticulousResearch
 List|TopNav|
 DataItem||TopLevelNavItem { Key = Projects, Label = Projects }
@@ -34,34 +133,37 @@ Custom|DashboardRoot|
 Pane||
 Text||Dashboard
 Text||Project overview: resources, artifacts, activity and cost.
-Text|ResourceCount|3
+Text|ResourceCount|10
 Text||Resources
-Text|ConversationCount|1
+Text|ConversationCount|7
 Text||Conversations
 Text|ArtifactCount|1
 Text||Artifacts
 Text||Last activity: 
-Text|LastActivity|8/8/2026 6:30 AM +00:00
+Text|LastActivity|8/8/2026 7:28 AM +00:00
 Pane|ConsolidatedCostPanel|
 Text||Cost
-Text|CostTotal|$0.01
+Text|CostTotal|$0.09
 Pane|CostBySource|
 Text||Conversations: 
-Text|CostConversations|$0.01
+Text|CostConversations|$0.09
 Text||   Artifacts: 
 Text|CostArtifacts|$0.00
 Text||By model
 List|CostByModel|
-DataItem||ModelSpend { Model = claude-opus-5, Cost = 0.0135, CostDisplay = $0.01 }
+DataItem||ModelSpend { Model = claude-opus-5, Cost = 0.0810, CostDisplay = $0.08 }
 Text||claude-opus-5
+Text||$0.08
+DataItem||ModelSpend { Model = claude-sonnet-5, Cost = 0.0081, CostDisplay = $0.01 }
+Text||claude-sonnet-5
 Text||$0.01
 Pane|CostByWindow|
 Text||Today: 
-Text|CostToday|0.0135
+Text|CostToday|0.0891
 Text||   This week: 
-Text|CostWeek|0.0135
+Text|CostWeek|0.0891
 Text||   All time: 
-Text|CostAllTime|0.0135
+Text|CostAllTime|0.0891
 Button|ExportUsageCsvButton|Export usage CSV
 Text||Export usage CSV
 Text|ExportUsageCsvConfirmation|

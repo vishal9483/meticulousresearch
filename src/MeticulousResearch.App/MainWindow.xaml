@@ -11,12 +11,36 @@
         Title="MeticulousResearch"
         Height="800" Width="1200" MinWidth="1024" MinHeight="640"
         WindowState="Maximized" ResizeMode="CanResize">
-    <Grid x:Name="AppSurface" AutomationProperties.AutomationId="AppSurface"
-          Background="{DynamicResource SurfaceBrush}">
+    <!-- The whole shell surface. A disabled ScrollViewer (not a Grid) carries the AppSurface id so
+         it surfaces to UIA (the surfacing rule: a Grid does not) while still filling the window. -->
+    <ScrollViewer x:Name="AppSurface" AutomationProperties.AutomationId="AppSurface"
+                  VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                  Background="{DynamicResource SurfaceBrush}">
+    <Grid Background="{DynamicResource SurfaceBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
+
+        <!-- @ui-only design-system component gallery (design-system-theming). Mounted behind the
+             shell (lowest z-order, covered by the nav + content) so its styled controls are
+             reachable by the theming @ui tests without a navigation seam. Collapsed in normal use;
+             the code-behind shows it only under the @ui harness (METICULOUS_UI_SEED). -->
+        <views:ThemeGalleryView x:Name="ThemeGallery" Grid.Column="0" Grid.ColumnSpan="2"
+                                Visibility="Collapsed" />
+
+        <!-- @ui-only branded onboarding welcome step (onboarding / app-branding-icon). Mounted
+             behind the shell so the onboarding presence assertions resolve without a first-run
+             launch mode (which would hide the Projects home the rest of the @ui suite relies on).
+             Collapsed in normal use; shown only under the @ui harness. -->
+        <views:OnboardingView x:Name="OnboardingHost" Grid.Column="0" Grid.ColumnSpan="2"
+                              Visibility="Collapsed" />
+
+        <!-- @ui-only app Settings screen (settings-secure-key / onboarding re-run / about entry).
+             Mounted behind the shell so the settings presence assertions resolve without a
+             navigation step. Collapsed in normal use; shown only under the @ui harness. -->
+        <views:SettingsView x:Name="SettingsHost" Grid.Column="0" Grid.ColumnSpan="2"
+                            Visibility="Collapsed" />
 
         <!-- Top-level navigation rail (root: Projects). -->
         <Border Grid.Column="0" Background="{DynamicResource PrimaryNavyBrush}" MinWidth="180">
@@ -67,4 +91,5 @@
             <views:CommandPaletteView x:Name="Palette" />
         </Grid>
     </Grid>
+    </ScrollViewer>
 </Window>

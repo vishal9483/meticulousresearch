@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MeticulousResearch.App.Branding;
 using MeticulousResearch.App.ViewModels;
@@ -20,7 +21,7 @@ public partial class MainWindow : Window
     /// Creates the shell window bound to the injected <paramref name="shellViewModel"/> and wires
     /// the command palette overlay to its <paramref name="paletteViewModel"/>.
     /// </summary>
-    public MainWindow(ShellViewModel shellViewModel, CommandPaletteViewModel paletteViewModel)
+    public MainWindow(ShellViewModel shellViewModel, CommandPaletteViewModel paletteViewModel, OnboardingViewModel onboardingViewModel, SettingsViewModel settingsViewModel)
     {
         InitializeComponent();
         DataContext = shellViewModel;
@@ -28,6 +29,26 @@ public partial class MainWindow : Window
         Palette.DataContext = _palette;
         PreviewKeyDown += OnPreviewKeyDown;
         ApplyBranding();
+        MountUiHarnessSurfaces(onboardingViewModel, settingsViewModel);
+    }
+
+    /// <summary>
+    /// Under the @ui harness only, shows the auxiliary surfaces that some theming/onboarding/settings
+    /// @ui tests reach without a navigation step — the design-system component gallery, the branded
+    /// onboarding welcome step, and the app Settings screen — mounted behind the shell (covered by
+    /// the nav + content) so their controls are present in the UIA tree. They assert presence, not
+    /// visibility; all stay collapsed in normal use so real users never see them.
+    /// </summary>
+    private void MountUiHarnessSurfaces(OnboardingViewModel onboardingViewModel, SettingsViewModel settingsViewModel)
+    {
+        if (Environment.GetEnvironmentVariable("METICULOUS_UI_SEED") != "1")
+            return;
+        ThemeGallery.DataContext = new ViewModels.ThemeGalleryViewModel();
+        ThemeGallery.Visibility = Visibility.Visible;
+        OnboardingHost.DataContext = onboardingViewModel;
+        OnboardingHost.Visibility = Visibility.Visible;
+        SettingsHost.DataContext = settingsViewModel;
+        SettingsHost.Visibility = Visibility.Visible;
     }
 
     /// <summary>

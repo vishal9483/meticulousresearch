@@ -5,11 +5,13 @@
              d:DataContext="{d:DesignInstance vm:OnboardingViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="OnboardingRoot"
              mc:Ignorable="d">
     <!-- First-run onboarding wizard (onboarding/phase.md, SPEC §3.8). A branded, styled stepper;
-         the Welcome step states the local-first privacy posture and where data lives. -->
+         the Welcome step states the local-first privacy posture and where data lives. The
+         AutomationId is on the UserControl root (surfaces to UIA; a Grid does not). -->
     <Grid Background="{DynamicResource SurfaceBrush}"
-          x:Name="OnboardingRoot" AutomationProperties.AutomationId="OnboardingRoot">
+          x:Name="OnboardingRoot">
         <Border Padding="32" MaxWidth="640" VerticalAlignment="Center" HorizontalAlignment="Center">
             <StackPanel>
                 <!-- Brand identity: the shared application icon + navy palette so first run reads as
