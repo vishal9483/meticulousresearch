@@ -38,6 +38,26 @@ public static class SampleContent
         + "density, cycle life, and supply-chain resilience. New entrants differentiate on LFP cost "
         + "leadership and on solid-state research roadmaps.";
 
+    /// <summary>Title of the bundled example image resource (image-vision-caption, SPEC §3.2.1).</summary>
+    public const string ImageResourceTitle = "Battery cost chart";
+
+    /// <summary>
+    /// A tiny valid PNG (2×2) with a correct signature + IHDR so the image header reader yields
+    /// positive pixel dimensions. Used to seed a bundled image resource offline; it is not a
+    /// renderable image, only exercises the add/store/preview path deterministically.
+    /// </summary>
+    public static byte[] ImageBytes { get; } =
+    {
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D,
+        0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x02,
+        0x00, 0x00, 0x00, 0x02,
+        0x08, 0x06, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    };
+
+
     /// <summary>The example artifact's title (matches the Market Research Report template shape).</summary>
     public const string ArtifactTitle = "Market Research Report";
 
