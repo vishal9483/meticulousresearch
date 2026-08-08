@@ -5,14 +5,15 @@
              d:DataContext="{d:DesignInstance vm:CommandPaletteViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="CommandPaletteRoot"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </UserControl.Resources>
     <!-- Command palette overlay (SPEC §3.5): a focused search box over a ranked result list with a
-         designed empty state. Opened by Ctrl+K; Esc dismisses (handled by the shell). -->
-    <Border AutomationProperties.AutomationId="CommandPaletteRoot"
-            Background="{DynamicResource SurfaceBrush}"
+         designed empty state. Opened by Ctrl+K; Esc dismisses (handled by the shell). The
+         AutomationId lives on the UserControl root (surfaces to UIA; a Border does not). -->
+    <Border Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource PrimaryNavyBrush}" BorderThickness="1"
             CornerRadius="8" Width="560" MaxHeight="440"
             HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,96,0,0"

@@ -28,17 +28,24 @@
                       AutomationProperties.AutomationId="GalleryDataGrid"
                       IsReadOnly="True" Height="120" Margin="0,4" />
 
-            <controls:ThemedDialog Title="Sample dialog"
-                                   AutomationProperties.AutomationId="GalleryDialog"
-                                   HorizontalAlignment="Left" Margin="0,12">
-                <TextBlock Text="Dialogs use the themed chrome." />
-            </controls:ThemedDialog>
+            <!-- ThemedDialog/ThemedToast derive from ContentControl, which does not surface to
+                 UIA; a disabled ScrollViewer wrapper carries the queried id so the @ui theming
+                 tests can find the styled control. -->
+            <ScrollViewer AutomationProperties.AutomationId="GalleryDialog"
+                          VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                          HorizontalAlignment="Left" Margin="0,12">
+                <controls:ThemedDialog Title="Sample dialog">
+                    <TextBlock Text="Dialogs use the themed chrome." />
+                </controls:ThemedDialog>
+            </ScrollViewer>
 
-            <controls:ThemedToast Severity="info"
-                                  AutomationProperties.AutomationId="GalleryToast"
-                                  HorizontalAlignment="Left" Margin="0,12">
-                <TextBlock Text="Toasts use the themed chrome." />
-            </controls:ThemedToast>
+            <ScrollViewer AutomationProperties.AutomationId="GalleryToast"
+                          VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                          HorizontalAlignment="Left" Margin="0,12">
+                <controls:ThemedToast Severity="info">
+                    <TextBlock Text="Toasts use the themed chrome." />
+                </controls:ThemedToast>
+            </ScrollViewer>
         </StackPanel>
     </ScrollViewer>
 </UserControl>
