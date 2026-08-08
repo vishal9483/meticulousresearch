@@ -5,6 +5,7 @@
              d:DataContext="{d:DesignInstance sections:ArtifactsViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="ArtifactsRoot"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -12,8 +13,7 @@
     <!-- Artifacts center-pane view (SPEC §3.4): the list of the project's deliverables, a "New
          artifact" entry point, a designed empty state when the project has no artifacts yet, and
          the editor's diff mode (two version pickers, side-by-side / inline, highlighted changes). -->
-    <Grid x:Name="ArtifactsRoot" Margin="24"
-          AutomationProperties.AutomationId="ArtifactsRoot">
+    <Grid x:Name="ArtifactsRoot" Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -34,12 +34,13 @@
                 Command="{Binding NewArtifactCommand}" />
 
         <!-- Designed empty state. -->
-        <StackPanel Grid.Row="2" Margin="0,24,0,0" VerticalAlignment="Top"
-                    AutomationProperties.AutomationId="ArtifactsEmptyState"
-                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
+        <ScrollViewer Grid.Row="2" Margin="0,24,0,0" VerticalAlignment="Top"
+                      AutomationProperties.AutomationId="ArtifactsEmptyState"
+                      VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
             <TextBlock Text="{x:Static sections:ArtifactsViewModel.EmptyStateMessage}"
                        TextWrapping="Wrap" Foreground="#777" />
-        </StackPanel>
+        </ScrollViewer>
 
         <!-- Artifact list. -->
         <ListBox Grid.Row="2" Margin="0,16,0,0"

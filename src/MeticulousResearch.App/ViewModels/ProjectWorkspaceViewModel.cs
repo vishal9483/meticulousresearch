@@ -2,10 +2,16 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.ViewModels.Sections;
+using MeticulousResearch.Core.Ai;
+using MeticulousResearch.Core.Artifacts;
+using MeticulousResearch.Core.Artifacts.Diff;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Cost;
+using MeticulousResearch.Core.Export;
 using MeticulousResearch.Core.Models;
 using MeticulousResearch.Core.Projects;
+using MeticulousResearch.Core.Resources;
+using MeticulousResearch.Core.Search;
 using MeticulousResearch.Core.Settings;
 
 namespace MeticulousResearch.App.ViewModels;
@@ -45,15 +51,21 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
         ISettingsService? settings = null,
         IModelCatalog? catalog = null,
         IStreamingConversationService? streaming = null,
-        ICostService? cost = null)
+        ICostService? cost = null,
+        IResourceService? resources = null,
+        ISearchService? search = null,
+        IArtifactService? artifacts = null,
+        IArtifactDiffService? diffService = null,
+        IEditWithClaudeService? editService = null,
+        IExportService? exportService = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
             [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog, streaming),
-            [NavigationSection.Resources] = new ResourcesViewModel(projectId),
-            [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId),
+            [NavigationSection.Resources] = new ResourcesViewModel(projectId, resources, search),
+            [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId, artifacts, diffService, editService, catalog, exportService),
             [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects, cost),
             [NavigationSection.Settings] = new ProjectSettingsViewModel(projectId),
         };

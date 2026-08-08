@@ -5,6 +5,7 @@
              d:DataContext="{d:DesignInstance sections:ConversationsViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="ConversationsRoot"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -12,8 +13,7 @@
     <!-- Conversations center-pane view (SPEC §3.3): a scrollable thread of user/assistant turns,
          a designed empty state, and a composer. Streaming/model-selector/turn-actions layer on
          later via the view-model hooks. -->
-    <Grid x:Name="ConversationsRoot" Margin="24"
-          AutomationProperties.AutomationId="ConversationsRoot">
+    <Grid x:Name="ConversationsRoot" Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />

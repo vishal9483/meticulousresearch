@@ -44,6 +44,14 @@
                         HorizontalContentAlignment="Left"
                         Background="Transparent" Foreground="{DynamicResource OnAccentBrush}" BorderThickness="0"
                         Click="ThemeToggle_Click" />
+                <!-- App-level Settings entry (settings-secure-key/about-screen); the About screen is
+                     reached from here. -->
+                <Button DockPanel.Dock="Bottom" x:Name="OpenSettingsButton"
+                        AutomationProperties.AutomationId="OpenSettingsButton"
+                        Content="Settings" Margin="0,8" Padding="10,8"
+                        HorizontalContentAlignment="Left"
+                        Background="Transparent" Foreground="{DynamicResource OnAccentBrush}" BorderThickness="0"
+                        Command="{Binding GoToSettingsCommand}" />
             </DockPanel>
         </Border>
 

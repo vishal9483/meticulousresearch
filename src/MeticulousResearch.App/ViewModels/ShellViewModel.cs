@@ -68,6 +68,10 @@ public sealed partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     public void GoHome() => _navigation.NavigateTo<ProjectsHomeViewModel>();
 
+    /// <summary>Navigates the content region to the app-level Settings screen (SPEC §3.5, §4(7)).</summary>
+    [RelayCommand]
+    public void GoToSettings() => _navigation.NavigateTo<SettingsViewModel>();
+
     /// <summary>
     /// Opens a project's three-pane workspace, landing on its default section and recording the
     /// project as active. Passing the project id as the first navigation parameter scopes the

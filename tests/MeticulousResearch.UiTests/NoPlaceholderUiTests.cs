@@ -54,18 +54,10 @@ public sealed class NoPlaceholderUiTests
     {
         if (destination == "Projects home")
         {
-            return window.FindFirstDescendant(cf => cf.ByAutomationId("ProjectsHomeRoot"));
+            return ShellUiFlow.EnsureAtHome(window);
         }
 
         var section = destination == "Project dashboard" ? "Dashboard" : destination;
-
-        var workspace = window.FindFirstDescendant(cf => cf.ByAutomationId("WorkspaceRoot"))
-            ?? throw new NotSupportedException(
-                "Opening a project requires the projects-crud feature; wire this to its open action when available.");
-
-        var navItem = workspace.FindFirstDescendant(cf => cf.ByName(section))?.AsRadioButton();
-        navItem?.Click();
-
-        return window.FindFirstDescendant(cf => cf.ByAutomationId("CenterPane"));
+        return ShellUiFlow.OpenSection(window, section);
     }
 }

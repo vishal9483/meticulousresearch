@@ -5,6 +5,7 @@
              d:DataContext="{d:DesignInstance vm:SettingsViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="AppSettingsRoot"
              mc:Ignorable="d">
     <!-- App-level Settings: secure API key, endpoint, preferences and data directory
          (settings-secure-key/phase.md). Scrollable so nothing is clipped when narrow. -->
@@ -12,7 +13,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" x:Name="AppSettingsRoot" AutomationProperties.AutomationId="AppSettingsRoot">
+        <StackPanel Margin="24" x:Name="AppSettingsRoot">
             <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="SemiBold" />
 
             <!-- API key -->

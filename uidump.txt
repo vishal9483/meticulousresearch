@@ -1,0 +1,77 @@
+TitleBar|TitleBar|
+MenuBar|SystemMenuBar|System
+Button|Minimize-Restore|Minimize
+Button|Maximize-Restore|Restore
+Button|Close|Close
+Text||MeticulousResearch
+List|TopNav|
+DataItem||TopLevelNavItem { Key = Projects, Label = Projects }
+Button||Projects
+Text||Projects
+Button|ThemeToggle|Toggle theme
+Text||Toggle theme
+Button|OpenSettingsButton|Settings
+Text||Settings
+Custom|WorkspaceRoot|
+List|LeftNav|
+DataItem||MeticulousResearch.App.ViewModels.Sections.ConversationsViewModel
+RadioButton||Conversations
+Text||Conversations
+DataItem||MeticulousResearch.App.ViewModels.Sections.ResourcesViewModel
+RadioButton||Resources
+Text||Resources
+DataItem||MeticulousResearch.App.ViewModels.Sections.ArtifactsViewModel
+RadioButton||Artifacts
+Text||Artifacts
+DataItem||MeticulousResearch.App.ViewModels.Sections.DashboardViewModel
+RadioButton||Dashboard
+Text||Dashboard
+DataItem||MeticulousResearch.App.ViewModels.Sections.ProjectSettingsViewModel
+RadioButton||Settings
+Text||Settings
+Pane|CenterPane|MeticulousResearch.App.ViewModels.Sections.DashboardViewModel
+Custom|DashboardRoot|
+Pane||
+Text||Dashboard
+Text||Project overview: resources, artifacts, activity and cost.
+Text|ResourceCount|9
+Text||Resources
+Text|ConversationCount|5
+Text||Conversations
+Text|ArtifactCount|2
+Text||Artifacts
+Text||Last activity: 
+Text|LastActivity|8/8/2026 4:53 AM +00:00
+Text||Cost
+Text|CostTotal|$0.07
+Text||Conversations: 
+Text|CostConversations|$0.07
+Text||   Artifacts: 
+Text|CostArtifacts|$0.00
+Text||By model
+List|CostByModel|
+DataItem||ModelSpend { Model = claude-opus-5, Cost = 0.0675, CostDisplay = $0.07 }
+Text||claude-opus-5
+Text||$0.07
+Text||Today: 
+Text|CostToday|0.0675
+Text||   This week: 
+Text|CostWeek|0.0675
+Text||   All time: 
+Text|CostAllTime|0.0675
+Button|ExportUsageCsvButton|Export usage CSV
+Text||Export usage CSV
+Text|ExportUsageCsvConfirmation|
+Text||Quick actions
+List|QuickActions|
+DataItem||New conversation
+Button||New conversation
+Text||New conversation
+DataItem||Add resource
+Button||Add resource
+Text||Add resource
+DataItem||New artifact
+Button||New artifact
+Text||New artifact
+Pane|RightPane|Context
+Text||Context

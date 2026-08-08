@@ -1,4 +1,5 @@
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Tools;
 
 namespace MeticulousResearch.UiTests;
 
@@ -31,7 +32,9 @@ public sealed class AboutUiTests
         openAbout!.Invoke();
 
         // Then the About screen is shown.
-        var about = window.FindFirstDescendant(cf => cf.ByAutomationId("AboutRoot"));
+        var about = Retry.WhileNull(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("AboutRoot")),
+            TimeSpan.FromSeconds(5)).Result;
         Assert.NotNull(about);
 
         // And it presents the app identity: icon, product name, and version.
@@ -54,7 +57,9 @@ public sealed class AboutUiTests
         var openAbout = window.FindFirstDescendant(cf => cf.ByAutomationId("OpenAboutButton"))?.AsButton();
         Assert.NotNull(openAbout);
         openAbout!.Invoke();
-        Assert.NotNull(window.FindFirstDescendant(cf => cf.ByAutomationId("AboutRoot")));
+        Assert.NotNull(Retry.WhileNull(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("AboutRoot")),
+            TimeSpan.FromSeconds(5)).Result);
 
         // When I close it.
         var close = window.FindFirstDescendant(cf => cf.ByAutomationId("AboutCloseButton"))?.AsButton();
@@ -62,16 +67,27 @@ public sealed class AboutUiTests
         close!.Invoke();
 
         // Then I return to the previous screen (Settings), and the About screen is gone.
-        Assert.NotNull(window.FindFirstDescendant(cf => cf.ByAutomationId("AppSettingsRoot")));
+        Assert.NotNull(Retry.WhileNull(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("AppSettingsRoot")),
+            TimeSpan.FromSeconds(5)).Result);
         Assert.Null(window.FindFirstDescendant(cf => cf.ByAutomationId("AboutRoot")));
     }
 
     /// <summary>
-    /// Shows the app-level Settings screen (the About entry point lives on it). Present when a build
-    /// routes to Settings; the ByAutomationId lookups above then resolve.
+    /// Opens the app-level Settings screen (the About entry point lives on it) by clicking the
+    /// shell's Settings nav entry, then waits for the Settings root to render.
     /// </summary>
-    private static void OpenSettings(AutomationElement window)
+    private static void OpenSettings(Window window)
     {
-        _ = window.FindFirstDescendant(cf => cf.ByAutomationId("AppSettingsRoot"));
+        var openSettings = Retry.WhileNull(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("OpenSettingsButton"))?.AsButton(),
+            TimeSpan.FromSeconds(5)).Result;
+        Assert.NotNull(openSettings);
+        openSettings!.Invoke();
+
+        var settingsRoot = Retry.WhileNull(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("AppSettingsRoot")),
+            TimeSpan.FromSeconds(5)).Result;
+        Assert.NotNull(settingsRoot);
     }
 }

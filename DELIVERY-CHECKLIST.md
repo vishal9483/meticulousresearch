@@ -39,7 +39,9 @@ A launch bug was fixed in this pass (the harness looked for the app under a doub
 dotnet build MeticulousResearch.sln -c Debug
 dotnet test tests/MeticulousResearch.UiTests/MeticulousResearch.UiTests.csproj -c Debug --filter "Category=ui"
 dotnet test tests/MeticulousResearch.E2E/MeticulousResearch.E2E.csproj -c Debug          # includes the FlaUI @e2e journeys
-```
+```+
+
+
 
 **Expected / to verify by hand:**
 - The app window appears and each journey navigates it end to end.

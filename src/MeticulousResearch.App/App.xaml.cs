@@ -33,6 +33,15 @@ public partial class App : Application
         var themeService = _host.Services.GetRequiredService<IThemeService>();
         _themeApplier = new WpfThemeApplier(themeService, this);
 
+        // @ui harness only: seed a populated offline sample project so content journeys (resources,
+        // artifacts, versions, diff, cost) have data without a key or network.
+        if (System.Environment.GetEnvironmentVariable("METICULOUS_UI_SEED") == "1")
+        {
+            var projects = _host.Services.GetRequiredService<MeticulousResearch.Core.Projects.IProjectService>();
+            if (projects.List(includeArchived: true).Count == 0)
+                _host.Services.GetRequiredService<MeticulousResearch.Core.Onboarding.ISampleProjectFactory>().CreateSampleProject();
+        }
+
         var window = _host.Services.GetRequiredService<MainWindow>();
         window.Show();
     }

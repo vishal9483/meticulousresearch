@@ -25,9 +25,7 @@ public sealed class BackupRestoreUiTests
     [Fact]
     public void Backing_up_a_project_from_the_project_menu()
     {
-        var workspace = _fixture.MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("WorkspaceRoot"))
-            ?? throw new NotSupportedException(
-                "Opening a project requires the projects-crud feature; wire this test to its open action when available.");
+        var workspace = ShellUiFlow.OpenSampleProject(_fixture.MainWindow);
 
         // When I choose "Back up project" from the project menu.
         var backupButton = workspace.FindFirstDescendant(cf => cf.ByAutomationId("BackupProjectButton"))?.AsButton();
@@ -48,8 +46,7 @@ public sealed class BackupRestoreUiTests
     public void Restoring_a_project_from_the_Projects_home()
     {
         var home = _fixture.MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("ProjectsHomeRoot"))
-            ?? throw new NotSupportedException(
-                "The Projects home is owned by projects-crud; wire this test to it when available.");
+            ?? ShellUiFlow.EnsureAtHome(_fixture.MainWindow);
 
         // When I choose "Restore project" and pick a backup zip.
         var restoreButton = home.FindFirstDescendant(cf => cf.ByAutomationId("RestoreProjectButton"))?.AsButton();

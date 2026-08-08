@@ -299,11 +299,25 @@ public static class ServiceConfiguration
 
         services.AddSingleton<MainWindow>();
 
+        // @ui harness only: replace the generation backend with a deterministic offline fake so
+        // conversation/streaming/turn journeys run without a key or network. Last registration wins,
+        // and the conversation/streaming/artifact services resolve IChatService lazily.
+        if (System.Environment.GetEnvironmentVariable("METICULOUS_UI_FAKE_AI") == "1")
+        {
+            services.AddSingleton<IChatService, Services.FakeChatService>();
+        }
+
         return services;
     }
 
     private static string DefaultDataDirectory()
     {
+        // Allow an environment override so an isolated/clean data directory can be used (e.g. by the
+        // FlaUI @ui harness). Never overrides secure credentials, which stay in the vault.
+        var overrideDir = System.Environment.GetEnvironmentVariable("METICULOUS_DATA_DIR");
+        if (!string.IsNullOrWhiteSpace(overrideDir))
+            return overrideDir;
+
         return System.IO.Path.Combine(
             System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
             "MeticulousResearch");

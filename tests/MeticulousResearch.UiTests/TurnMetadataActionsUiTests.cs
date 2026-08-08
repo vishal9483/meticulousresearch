@@ -100,10 +100,14 @@ public sealed class TurnMetadataActionsUiTests
         Assert.NotNull(send);
         send!.Click();
 
-        var thread = conversations.FindFirstDescendant(cf => cf.ByAutomationId("ConversationThread"));
+        var thread = FlaUI.Core.Tools.Retry.WhileNull(
+            () => conversations.FindFirstDescendant(cf => cf.ByAutomationId("ConversationThread")),
+            TimeSpan.FromSeconds(10)).Result;
         Assert.NotNull(thread);
 
-        var actions = thread!.FindFirstDescendant(cf => cf.ByAutomationId("TurnActions"))
+        var actions = FlaUI.Core.Tools.Retry.WhileNull(
+            () => thread!.FindFirstDescendant(cf => cf.ByAutomationId("TurnActions")),
+            TimeSpan.FromSeconds(10)).Result
             ?? throw new NotSupportedException(
                 "A completed assistant turn should expose its metadata/cost/action affordances (turn-metadata-actions).");
         return actions;
@@ -116,9 +120,7 @@ public sealed class TurnMetadataActionsUiTests
     /// </summary>
     private static AutomationElement OpenConversationsView(Window window)
     {
-        var workspace = window.FindFirstDescendant(cf => cf.ByAutomationId("WorkspaceRoot"))
-            ?? throw new NotSupportedException(
-                "Opening a project requires the projects-crud feature; wire this helper to its open action when available.");
+        var workspace = ShellUiFlow.OpenSampleProject(window);
 
         var navItem = workspace.FindFirstDescendant(cf => cf.ByName("Conversations"))?.AsRadioButton();
         Assert.NotNull(navItem);

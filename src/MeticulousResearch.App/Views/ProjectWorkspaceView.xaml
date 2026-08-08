@@ -5,6 +5,7 @@
              d:DataContext="{d:DesignInstance vm:ProjectWorkspaceViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="WorkspaceRoot"
              mc:Ignorable="d">
     <Grid x:Name="WorkspaceRoot">
         <Grid.ColumnDefinitions>
@@ -67,13 +68,21 @@
             </ItemsControl>
         </Border>
 
-        <!-- Center pane: active section -->
-        <ContentControl Grid.Column="1" x:Name="CenterPane" Content="{Binding CurrentSection}" />
+        <!-- Center pane: active section. Hosted in a ScrollViewer so the pane surfaces in the UIA
+             control view (a bare ContentControl does not) and carries its AutomationId. -->
+        <ScrollViewer Grid.Column="1" x:Name="CenterPane"
+                      AutomationProperties.AutomationId="CenterPane"
+                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
+            <ContentControl Content="{Binding CurrentSection}" />
+        </ScrollViewer>
 
-        <!-- Right pane: contextual (present but may be empty) -->
-        <Border Grid.Column="2" x:Name="RightPane" Background="#FAFAFB"
+        <!-- Right pane: contextual (present but may be empty). ScrollViewer host so it surfaces. -->
+        <Border Grid.Column="2" Background="#FAFAFB"
                 BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
-            <TextBlock Text="Context" Margin="16" Foreground="#999" VerticalAlignment="Top" />
+            <ScrollViewer x:Name="RightPane" AutomationProperties.AutomationId="RightPane"
+                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
+                <TextBlock Text="Context" Margin="16" Foreground="#999" VerticalAlignment="Top" />
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>

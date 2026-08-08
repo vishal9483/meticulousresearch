@@ -24,7 +24,14 @@ public sealed class ShellNavigationUiTests
     {
         var window = _fixture.MainWindow;
 
-        Assert.Equal("MeticulousResearch", window.Title);
+        // The @ui collection shares one app instance; return to the Projects home so this launch
+        // scenario is order-independent.
+        ShellUiFlow.EnsureAtHome(window);
+
+        // Gherkin says the product title "MeticulousResearch"; the later app-branding-icon feature
+        // re-branded the window title to the single-source product name (enforced by the headless
+        // gate's AppBrandingTests), so assert against that product name.
+        Assert.Equal(MeticulousResearch.Core.AppInfo.AssemblyAppInfo.ProductNameValue, window.Title);
 
         // maximized-restorable: the window supports the Window pattern, is maximized, and can restore.
         var pattern = window.Patterns.Window.Pattern;
@@ -45,6 +52,13 @@ public sealed class ShellNavigationUiTests
     {
         var window = _fixture.MainWindow;
         OpenSampleProject(window);
+
+        var dbg = new System.Collections.Generic.List<string>();
+        foreach (var d in window.FindAllDescendants())
+        {
+            try { dbg.Add($"{d.ControlType}|{d.AutomationId}|{d.Name}"); } catch { }
+        }
+        System.IO.File.WriteAllLines(@"D:\workdir\MeticulasResearch\uidump.txt", dbg);
 
         foreach (var section in new[] { "Conversations", "Resources", "Artifacts", "Dashboard", "Settings" })
         {
@@ -80,7 +94,9 @@ public sealed class ShellNavigationUiTests
         // center pane shows the "<section>" view (its section title header is rendered)
         var center = window.FindFirstDescendant(cf => cf.ByAutomationId("CenterPane"));
         Assert.NotNull(center);
-        var header = center!.FindFirstDescendant(cf => cf.ByName(section));
+        var header = FlaUI.Core.Tools.Retry.WhileNull(
+            () => center!.FindFirstDescendant(cf => cf.ByName(section)),
+            TimeSpan.FromSeconds(5)).Result;
         Assert.NotNull(header);
     }
 
@@ -107,23 +123,15 @@ public sealed class ShellNavigationUiTests
         Assert.NotNull(window.FindFirstDescendant(cf => cf.ByAutomationId("LeftNav")));
         Assert.NotNull(window.FindFirstDescendant(cf => cf.ByAutomationId("CenterPane")));
         Assert.NotNull(window.FindFirstDescendant(cf => cf.ByAutomationId("RightPane")));
+
+        // Restore the maximized launch state so order-independent scenarios that assert it still pass.
+        transform.Resize(1280, 800);
+        pattern.SetWindowVisualState(WindowVisualState.Maximized);
     }
 
     /// <summary>
-    /// Opens a project so the three-pane workspace is showing. Projects-crud lands the real
-    /// "open project" affordance; until then this helper is the single seam @ui tests use.
+    /// Opens a project so the three-pane workspace is showing, driving the real projects-crud
+    /// create/open affordance via the shared flow helper.
     /// </summary>
-    private static void OpenSampleProject(Window window)
-    {
-        var workspace = window.FindFirstDescendant(cf => cf.ByAutomationId("WorkspaceRoot"));
-        if (workspace is not null)
-        {
-            return; // already in a workspace
-        }
-
-        // No open-project UI exists in the shell-only feature; a real affordance arrives with
-        // projects-crud. This intentionally fails loudly so the test is not silently green.
-        throw new NotSupportedException(
-            "Opening a project requires the projects-crud feature; wire this helper to its open action when available.");
-    }
+    private static void OpenSampleProject(Window window) => ShellUiFlow.OpenSampleProject(window);
 }

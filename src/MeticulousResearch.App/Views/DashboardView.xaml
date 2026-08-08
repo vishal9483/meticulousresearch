@@ -5,6 +5,7 @@
              d:DataContext="{d:DesignInstance sections:DashboardViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="DashboardRoot"
              mc:Ignorable="d">
     <!-- Project dashboard center-pane view: counts, last activity, and quick actions (SPEC §3.1).
          Scrollable so content is never clipped at narrow widths (@ui resize scenario). -->

@@ -17,10 +17,21 @@ public sealed class ShellUiFixture : IDisposable
     public ShellUiFixture()
     {
         _automation = new UIA3Automation();
+
+        // Launch against a clean, unique data directory so @ui tests start from a deterministic
+        // empty state (no projects/artifacts accumulated from prior runs).
+        _dataDirectory = Path.Combine(Path.GetTempPath(), "MeticulousResearch-uitests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_dataDirectory);
+        Environment.SetEnvironmentVariable("METICULOUS_DATA_DIR", _dataDirectory);
+        Environment.SetEnvironmentVariable("METICULOUS_UI_SEED", "1");
+        Environment.SetEnvironmentVariable("METICULOUS_UI_FAKE_AI", "1");
+
         _app = Application.Launch(ResolveAppExePath());
         MainWindow = _app.GetMainWindow(_automation, TimeSpan.FromSeconds(20))
                      ?? throw new InvalidOperationException("The app main window did not appear.");
     }
+
+    private readonly string _dataDirectory;
 
     /// <summary>The app's main shell window.</summary>
     public Window MainWindow { get; }
@@ -57,6 +68,7 @@ public sealed class ShellUiFixture : IDisposable
         {
             _app.Dispose();
             _automation.Dispose();
+            try { Directory.Delete(_dataDirectory, recursive: true); } catch { /* best-effort */ }
         }
     }
 }

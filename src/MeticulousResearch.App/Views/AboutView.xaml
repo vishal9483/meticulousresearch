@@ -6,6 +6,7 @@
              d:DataContext="{d:DesignInstance vm:AboutViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="AboutRoot"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -13,7 +14,7 @@
     <!-- About screen (about-screen/phase.md, SPEC §3.7): app icon, product name, version. Styled
          with design-system tokens so no default WPF chrome shows (§9.1(10)). Room is left below the
          version for update-notice (M6) to surface "update available". -->
-    <Grid x:Name="AboutRoot" AutomationProperties.AutomationId="AboutRoot"
+    <Grid x:Name="AboutRoot"
           Background="{DynamicResource SurfaceBrush}">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{StaticResource SpacingLg}">
             <Image Source="{DynamicResource AppIcon}" Width="96" Height="96"

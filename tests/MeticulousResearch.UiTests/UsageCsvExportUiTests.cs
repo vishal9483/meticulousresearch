@@ -48,9 +48,7 @@ public sealed class UsageCsvExportUiTests
     /// </summary>
     private static AutomationElement OpenDashboardView(Window window)
     {
-        var workspace = window.FindFirstDescendant(cf => cf.ByAutomationId("WorkspaceRoot"))
-            ?? throw new NotSupportedException(
-                "Opening a project requires the projects-crud feature; wire this helper to its open action when available.");
+        var workspace = ShellUiFlow.OpenSampleProject(window);
 
         var navItem = workspace.FindFirstDescendant(cf => cf.ByName("Dashboard"))?.AsRadioButton();
         Assert.NotNull(navItem);

@@ -5,11 +5,12 @@
              d:DataContext="{d:DesignInstance vm:ProjectsHomeViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AutomationProperties.AutomationId="ProjectsHomeRoot"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
-    <Grid Margin="24" x:Name="ProjectsHomeRoot" AutomationProperties.AutomationId="ProjectsHomeRoot">
+    <Grid Margin="24" x:Name="ProjectsHomeRoot">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -60,14 +61,16 @@
             <!-- Empty state -->
             <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
                     x:Name="EmptyState"
-                    AutomationProperties.AutomationId="ProjectsEmptyState"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="No projects yet" FontSize="16" FontWeight="SemiBold"
-                               HorizontalAlignment="Center" Foreground="#555" />
-                    <TextBlock Text="{Binding EmptyStateCallToAction}" Margin="0,4,0,0"
-                               HorizontalAlignment="Center" Foreground="#777" />
-                </StackPanel>
+                <ScrollViewer AutomationProperties.AutomationId="ProjectsEmptyState"
+                              VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="No projects yet" FontSize="16" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" Foreground="#555" />
+                        <TextBlock Text="{Binding EmptyStateCallToAction}" Margin="0,4,0,0"
+                                   HorizontalAlignment="Center" Foreground="#777" />
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
 
             <!-- Cards -->
@@ -109,10 +112,11 @@
 
             <!-- Delete confirmation prompt (shown before anything is deleted) -->
             <Border x:Name="DeleteConfirmation"
-                    AutomationProperties.AutomationId="DeleteConfirmation"
                     Background="#FFFFFF" BorderBrush="#C62828" BorderThickness="1" CornerRadius="6"
                     Padding="16" VerticalAlignment="Center" HorizontalAlignment="Center"
                     Visibility="{Binding IsConfirmingDelete, Converter={StaticResource BoolToVis}}">
+                <ScrollViewer AutomationProperties.AutomationId="DeleteConfirmation"
+                              VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <TextBlock Text="Delete this project?" FontWeight="SemiBold" FontSize="15" />
                     <TextBlock Text="{Binding PendingDeleteName}" Foreground="#777" Margin="0,4,0,0" />
@@ -127,6 +131,7 @@
                                 Command="{Binding ConfirmDeleteCommand}" />
                     </StackPanel>
                 </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>
