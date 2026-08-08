@@ -67,14 +67,31 @@ public sealed class ArtifactCreationUiTests
     {
         var conversations = OpenConversationsView(_fixture.MainWindow);
 
-        // Open the first assistant turn's action menu.
-        var actions = conversations.FindFirstDescendant(cf => cf.ByAutomationId("TurnActions"));
+        // Given a conversation with an assistant turn: send a message (the @ui fake completes it).
+        var input = conversations.FindFirstDescendant(cf => cf.ByAutomationId("MessageInput"))?.AsTextBox();
+        Assert.NotNull(input);
+        input!.Text = "What is the market size?";
+        var send = conversations.FindFirstDescendant(cf => cf.ByAutomationId("SendButton"))?.AsButton();
+        Assert.NotNull(send);
+        send!.Click();
+
+        var thread = FlaUI.Core.Tools.Retry.WhileNull(
+            () => conversations.FindFirstDescendant(cf => cf.ByAutomationId("ConversationThread")),
+            System.TimeSpan.FromSeconds(10)).Result;
+        Assert.NotNull(thread);
+
+        // When I open the completed turn's action menu.
+        var actions = FlaUI.Core.Tools.Retry.WhileNull(
+            () => thread!.FindFirstDescendant(cf => cf.ByAutomationId("TurnActionMenu")),
+            System.TimeSpan.FromSeconds(10)).Result;
         Assert.NotNull(actions);
-        actions!.AsButton()?.Click();
+        var menu = actions!.FindFirstDescendant(cf => cf.ByName("Actions"))?.AsMenuItem();
+        Assert.NotNull(menu);
+        menu!.Click();
 
         // A "Promote to artifact" action is available.
-        var promote = conversations.FindFirstDescendant(cf => cf.ByName("Promote to artifact"))
-                      ?? conversations.FindFirstDescendant(cf => cf.ByAutomationId("PromoteToArtifactAction"));
+        var promote = thread!.FindFirstDescendant(cf => cf.ByName("Promote to artifact"))
+                      ?? thread.FindFirstDescendant(cf => cf.ByAutomationId("PromoteAction"));
         Assert.NotNull(promote);
     }
 

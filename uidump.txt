@@ -34,14 +34,14 @@ Custom|DashboardRoot|
 Pane||
 Text||Dashboard
 Text||Project overview: resources, artifacts, activity and cost.
-Text|ResourceCount|9
+Text|ResourceCount|4
 Text||Resources
 Text|ConversationCount|0
 Text||Conversations
 Text|ArtifactCount|1
 Text||Artifacts
 Text||Last activity: 
-Text|LastActivity|8/8/2026 5:40 AM +00:00
+Text|LastActivity|8/8/2026 5:57 AM +00:00
 Text||Cost
 Text|CostTotal|$0.00
 Text||Conversations: 
