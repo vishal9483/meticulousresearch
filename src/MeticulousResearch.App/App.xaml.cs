@@ -40,6 +40,10 @@ public partial class App : Application
             var projects = _host.Services.GetRequiredService<MeticulousResearch.Core.Projects.IProjectService>();
             if (projects.List(includeArchived: true).Count == 0)
                 _host.Services.GetRequiredService<MeticulousResearch.Core.Onboarding.ISampleProjectFactory>().CreateSampleProject();
+
+            // A small context budget so the seeded resources genuinely exceed it, exercising the
+            // composer's over-budget warning deterministically (context-budget, SPEC §3.2).
+            _host.Services.GetRequiredService<MeticulousResearch.Core.Settings.ISettingsService>().ContextBudget = 100;
         }
 
         var window = _host.Services.GetRequiredService<MainWindow>();

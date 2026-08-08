@@ -275,28 +275,82 @@
             </ScrollViewer>
         </Grid>
 
-        <!-- Composer -->
-        <Grid Grid.Row="2" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" x:Name="MessageInput" MinHeight="40"
-                     AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                     AutomationProperties.AutomationId="MessageInput"
-                     Text="{Binding Draft, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Grid.Column="1" Content="Send" Padding="16,8" Margin="8,0,0,0"
-                    VerticalAlignment="Bottom"
-                    AutomationProperties.AutomationId="SendButton"
-                    Command="{Binding SendCommand}" />
-            <!-- Stop control (streaming, SPEC §3.5): cancels an in-progress generation; shown only
-                 while streaming. -->
-            <Button Grid.Column="1" Content="Stop" Padding="16,8" Margin="8,0,0,0"
-                    VerticalAlignment="Bottom"
-                    AutomationProperties.AutomationId="StopButton"
-                    AutomationProperties.Name="Stop"
-                    Command="{Binding StopCommand}"
-                    Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVisibilityConverter}}" />
-        </Grid>
+        <!-- Composer (wrapped in a ScrollViewer so the container id surfaces to UIA). -->
+        <ScrollViewer Grid.Row="2" Margin="0,12,0,0"
+                      VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                      AutomationProperties.AutomationId="ConversationComposer">
+          <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Context-budget meter (context-budget, SPEC §3.2, §8): a live estimate of the enabled
+                 resources + overhead against the model window and configured budget, labeled
+                 "estimated", with an over-budget warning offering deselect / switch-model (no
+                 silent truncation). -->
+            <ScrollViewer Grid.Row="0" Margin="0,0,0,8"
+                          VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                          AutomationProperties.AutomationId="ContextBudgetMeter"
+                          DataContext="{Binding Budget}"
+                          Visibility="{Binding DataContext.HasBudget,
+                              RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl},
+                              Converter={StaticResource BoolToVisibilityConverter}}">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Context: " Foreground="#777" />
+                    <TextBlock Text="{Binding EstimatedTotal}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Label, StringFormat=' ({0})'}"
+                               AutomationProperties.Name="{Binding Label}" Foreground="#777" />
+                    <TextBlock Text="{Binding BudgetTokens, StringFormat=' tokens · budget {0}'}" Foreground="#777" />
+                </StackPanel>
+                <!-- Over-budget warning + resolutions (deselect a resource / switch to a larger
+                     model). Surfaced via a ScrollViewer; shown only when over threshold. -->
+                <ScrollViewer Margin="0,6,0,0"
+                              VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                              AutomationProperties.AutomationId="ContextBudgetWarning"
+                              Visibility="{Binding HasWarning, Converter={StaticResource BoolToVisibilityConverter}}">
+                  <Border Padding="8" CornerRadius="4" Background="#FFF4E5" BorderBrush="#F0C36D" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock VerticalAlignment="Center" Foreground="#8A6D3B"
+                                   Text="{Binding WarningMessage}" TextWrapping="Wrap" />
+                        <Button Margin="10,0,0,0" Padding="10,4" Content="Deselect largest"
+                                AutomationProperties.AutomationId="BudgetDeselectButton"
+                                Command="{Binding DeselectCommand}"
+                                CommandParameter="{Binding Contributors[0].ResourceId}" />
+                        <Button Margin="8,0,0,0" Padding="10,4" Content="Switch model"
+                                AutomationProperties.AutomationId="BudgetSwitchModelButton"
+                                Command="{Binding DataContext.SwitchBudgetModelCommand,
+                                          RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=UserControl}}" />
+                    </StackPanel>
+                  </Border>
+                </ScrollViewer>
+              </StackPanel>
+            </ScrollViewer>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" x:Name="MessageInput" MinHeight="40"
+                         AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         AutomationProperties.AutomationId="MessageInput"
+                         Text="{Binding Draft, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Grid.Column="1" Content="Send" Padding="16,8" Margin="8,0,0,0"
+                        VerticalAlignment="Bottom"
+                        AutomationProperties.AutomationId="SendButton"
+                        Command="{Binding SendCommand}" />
+                <!-- Stop control (streaming, SPEC §3.5): cancels an in-progress generation; shown only
+                     while streaming. -->
+                <Button Grid.Column="1" Content="Stop" Padding="16,8" Margin="8,0,0,0"
+                        VerticalAlignment="Bottom"
+                        AutomationProperties.AutomationId="StopButton"
+                        AutomationProperties.Name="Stop"
+                        Command="{Binding StopCommand}"
+                        Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVisibilityConverter}}" />
+            </Grid>
+          </Grid>
+        </ScrollViewer>
     </Grid>
 </UserControl>

@@ -6,6 +6,7 @@ using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
+using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Export;
@@ -63,13 +64,14 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
         ITurnActionService? turnActions = null,
         ITurnCostCalculator? turnCostCalculator = null,
         IClipboardService? clipboard = null,
-        RetryStatusViewModel? retryStatus = null)
+        RetryStatusViewModel? retryStatus = null,
+        IContextBudgetService? budgetService = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
-            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog, streaming, turnActions, turnCostCalculator, clipboard, retryStatus, cost),
+            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog, streaming, turnActions, turnCostCalculator, clipboard, retryStatus, cost, resources, budgetService),
             [NavigationSection.Resources] = new ResourcesViewModel(projectId, resources, search),
             [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId, artifacts, diffService, editService, catalog, exportService),
             [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects, cost),
