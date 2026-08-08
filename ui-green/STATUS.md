@@ -1,17 +1,27 @@
 # UI-Green STATUS board (master maintains this)
 
 Baseline: **33/108 `@ui` passing**. Headless gate: **GREEN (646)**. Branch: `test/e2e-suite`.
+Integration tip: **`f9e6e73`** (P1+P2+P3 merged). Milestone-1 (P1–P3) @ui: **39/42** green.
 
 ## Packet status
 | Packet | Owner branch | State | @ui pass in cluster | Notes |
 |--------|--------------|-------|---------------------|-------|
 | P1-resources     | `feat/uigreen-p1` | DONE (merged d146de0) | 10/10 | surfaced Extraction/Fetch/RemoveConfirm/SourceUri ids |
 | P2-artifacts     | `feat/uigreen-p2` | DONE (merged 0d05d8c) | 11/11 | Promote now green (P3 wired TurnActions + test fixed) |
-| P3-conversations | `feat/uigreen-p3` | WIP (18/21) | 18/21 | ContextBudget/RateLimit/ImageVision/dashboard done; 3 remain (ImageAttachments, ToolTransparency) |
-| P4-dashboard     | `feat/uigreen-p4` | TODO | – | UsageCsvExport |
+| P3-conversations | `feat/uigreen-p3` | MERGED (f9e6e73), 18/21 | 18/21 | ContextBudget/RateLimit/ImageVision/dashboard/turn-actions/streaming/model/cost/prompt-caching green; **ImageAttachments (2) + ToolTransparency (1) remain** |
+| P4-dashboard     | `feat/uigreen-p4` | TODO | – | UsageCsvExport (Dashboard cost panel already surfaced by P3) |
 | P5-shell         | `feat/uigreen-p5` | TODO | – | needs generic EmptyState/SkeletonLoader/ErrorState ids |
 | P6-projects      | `feat/uigreen-p6` | TODO | – | Backup + Template gallery entry points |
 | P7-v1            | `feat/uigreen-p7` | BLOCKED | – | start only after P1–P6 green |
+
+## Next session — start here
+Branch off the integration tip `f9e6e73` (`test/e2e-suite`). Two P3 tests remain (see the P3
+"remaining" section below), then P4–P6. To finish P3: `git checkout -b feat/uigreen-p3b test/e2e-suite`,
+implement ImageAttachments + ToolTransparency, verify the P3 cluster + headless gate, merge back.
+Cluster re-run filter:
+```powershell
+dotnet test tests/MeticulousResearch.UiTests/MeticulousResearch.UiTests.csproj -c Debug --filter "FullyQualifiedName~ImageAttachmentsUiTests|FullyQualifiedName~ToolTransparencyUiTests"
+```
 
 ## Already green (do not regress)
 ShellNavigation (7), NoPlaceholder (6), About (2), ProjectsCrud (4), and much of Resources/Artifacts.
@@ -21,6 +31,13 @@ Workers append here instead of editing shared infra; master applies then rebroad
 - APPLIED (P2, by master): registered `IEditWithClaudeService` + `IExportService` in
   `ServiceConfiguration`; `SampleProjectFactory` now adds 2 more versions to the sample artifact
   (3 total) via `AddVersion`; added `MarketResearchReportV2/V3` to `SampleContent`.
+- APPLIED (P3, by master): `ProjectWorkspaceViewModel` now passes `turnActions`/`costCalculator`/
+  `clipboard`/`retryStatus`/`cost` + `resources`/`budgetService` into `ConversationsViewModel`;
+  `FakeChatService` has a per-token delay + faults-once on a rate-limit prompt; the @ui `IChatService`
+  is wrapped in `RetryingChatService`; the @ui `IResourceService` uses `SampleImageCaptioner` +
+  caption-on-add; `App.xaml.cs` (@ui-only) seeds a captioned image resource and sets a low
+  `ContextBudget`. **These are the master-owned shared-infra seams — a future worker must not edit
+  them directly; file a request here.**
 
 ## Real app bugs found (fix the owning side; track here)
 - FIXED: `ProjectWorkspaceViewModel` built `ResourcesViewModel`/`ArtifactsViewModel` with the
