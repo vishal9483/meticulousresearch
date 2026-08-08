@@ -1,18 +1,24 @@
 # UI-Green STATUS board (master maintains this)
 
-Baseline: **33/108 `@ui` passing**. Headless gate: **GREEN (646)**. Branch: `test/e2e-suite`.
-Integration tip: **`f9e6e73`** (P1+P2+P3 merged). Milestone-1 (P1–P3) @ui: **39/42** green.
+Baseline: **33/108 `@ui` passing**. Now: **79/108 `@ui` passing**. Headless gate: **GREEN (646)**.
+Branch: `test/e2e-suite`. Integration tip: **`1a3b37a`** (P1–P6 merged).
 
 ## Packet status
 | Packet | Owner branch | State | @ui pass in cluster | Notes |
 |--------|--------------|-------|---------------------|-------|
 | P1-resources     | `feat/uigreen-p1` | DONE (merged d146de0) | 10/10 | surfaced Extraction/Fetch/RemoveConfirm/SourceUri ids |
 | P2-artifacts     | `feat/uigreen-p2` | DONE (merged 0d05d8c) | 11/11 | Promote now green (P3 wired TurnActions + test fixed) |
-| P3-conversations | `feat/uigreen-p3` | MERGED (f9e6e73), 18/21 | 18/21 | ContextBudget/RateLimit/ImageVision/dashboard/turn-actions/streaming/model/cost/prompt-caching green; **ImageAttachments (2) + ToolTransparency (1) remain** |
-| P4-dashboard     | `feat/uigreen-p4` | TODO | – | UsageCsvExport (Dashboard cost panel already surfaced by P3) |
-| P5-shell         | `feat/uigreen-p5` | TODO | – | needs generic EmptyState/SkeletonLoader/ErrorState ids |
-| P6-projects      | `feat/uigreen-p6` | TODO | – | Backup + Template gallery entry points |
-| P7-v1            | `feat/uigreen-p7` | BLOCKED | – | start only after P1–P6 green |
+| P3-conversations | `feat/uigreen-p3` | MERGED (f9e6e73), 18/21 | 18/21 | ImageAttachments (2) + ToolTransparency (1) remain (B1/B2) |
+| P4-dashboard     | `feat/uigreen-p4` | DONE (merged bcae184) | 1/1 | wired ExportUsageCsv click path (save dialog / @ui temp path) |
+| P5-shell         | `feat/uigreen-p5` | DONE (merged 7b89d71) | 18/31 | Theme(7)/CommandPalette(5)/AppBranding(3)/Onboarding(2)/Settings(1) green; Accessibility(4)/Esc(1)/EmptyStates(6)/UpdateNotice(2) → blockers |
+| P6-projects      | `feat/uigreen-p6` | DONE (merged 1a3b37a) | 2/4 | BackupRestore(2) green; DeliverableTemplates New-artifact (screen-presence) + New-project (ordering) remain |
+| P7-v1            | `feat/uigreen-p7` | TODO | – | V1Acceptance(9) — integration journeys; several may be ENV/live-API |
+
+## Regression note (important)
+An always-visible full-surface **command-palette overlay** (attempted for the Esc test) regressed
+~40 shared-session content tests via hit-test interference. Reverted. Lesson: **no persistent
+full-surface overlay**. The @ui-only behind-content mounts (ThemeGallery/Onboarding/Settings) are
+safe because they don't intercept and are covered by the content region.
 
 ## Autonomous run
 Master flows P1→P7 unattended; logs anything it can't green honestly to `BLOCKERS.md` and continues.
