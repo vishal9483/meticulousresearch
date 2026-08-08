@@ -44,5 +44,13 @@ green **without regressing the headless merge gate**, by splitting the remaining
 ## Files in this kit
 - `PLAYBOOK.md` — shared technical knowledge (read once).
 - `STATUS.md` — the live status board the master maintains.
+- `BLOCKERS.md` — durable ledger of every not-green test + why (master maintains it; the run logs
+  blockers here instead of halting).
 - `packets/P1..P7.md` — self-contained job descriptions.
 - `../.github/agents/ui-green-master.agent.md` and `ui-green-worker.agent.md` — agent definitions.
+
+## Autonomous long-run mode
+The master runs P1→P7 **without stopping for human sign-off** and never halts on a single stuck
+test: anything it can't green honestly (after 3 repair passes) is recorded in `BLOCKERS.md` and the
+run continues. It ends only when the suite is green (Run-complete) or all remaining tests are logged
+blockers (Run-parked). Merging to `main`/pushing still requires an explicit human request.

@@ -99,11 +99,13 @@
                       </StackPanel>
                     </ScrollViewer>
 
-                    <!-- Export usage CSV (usage-csv-export, SPEC §3.6, §9.1(7)): raw per-turn data. -->
+                    <!-- Export usage CSV (usage-csv-export, SPEC §3.6, §9.1(7)): raw per-turn data.
+                         Click resolves a destination (save dialog in real use; a temp path under the
+                         @ui harness, where UIA cannot drive a native dialog) then runs the command. -->
                     <Button Content="Export usage CSV" Margin="0,12,0,0" Padding="12,8"
                             HorizontalAlignment="Left"
                             AutomationProperties.AutomationId="ExportUsageCsvButton"
-                            Command="{Binding ExportUsageCsvCommand}" />
+                            Click="OnExportUsageCsv" />
                     <TextBlock Text="{Binding ExportConfirmation}" Foreground="#2E7D32" Margin="0,6,0,0"
                                AutomationProperties.AutomationId="ExportUsageCsvConfirmation" />
                 </StackPanel>
