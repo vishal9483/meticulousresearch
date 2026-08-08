@@ -18,13 +18,24 @@ internal sealed class FakeChatService : IChatService
         var parts = new[] { "Based on the in-scope resources, ", "here is a grounded answer ", "to your question." };
         foreach (var part in parts)
         {
-            if (cancellationToken.IsCancellationRequested)
+            // A small per-token delay so the @ui harness can observe the streaming state (live
+            // indicator, Stop control) and cancel mid-stream deterministically.
+            var cancelled = false;
+            try
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(450), cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                cancelled = true;
+            }
+
+            if (cancelled || cancellationToken.IsCancellationRequested)
             {
                 yield return new ChatCancelled();
                 yield break;
             }
 
-            await Task.Yield();
             yield return new ChatTokenDelta(part);
         }
 
