@@ -3,9 +3,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
 using MeticulousResearch.App.Services;
+using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Models;
+using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Settings;
 using MeticulousResearch.Core.Turns;
 
@@ -26,6 +28,9 @@ public sealed partial class ConversationsViewModel : SectionViewModel
     private readonly ITurnCostCalculator? _costCalculator;
     private readonly ICostService? _cost;
     private readonly IClipboardService? _clipboard;
+    private readonly IResourceService? _resources;
+    private readonly IContextBudgetService? _budgetService;
+    private readonly IModelCatalog _catalog;
     private readonly Dictionary<ConversationTurnViewModel, StreamingTurn> _streamingTurns = new();
     private CancellationTokenSource? _activeCts;
     private string? _conversationId;
@@ -57,7 +62,9 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         ITurnCostCalculator? costCalculator = null,
         IClipboardService? clipboard = null,
         RetryStatusViewModel? retryStatus = null,
-        ICostService? cost = null)
+        ICostService? cost = null,
+        IResourceService? resources = null,
+        IContextBudgetService? budgetService = null)
         : base(projectId)
     {
         _conversations = conversations;
@@ -66,10 +73,61 @@ public sealed partial class ConversationsViewModel : SectionViewModel
         _costCalculator = costCalculator;
         _cost = cost;
         _clipboard = clipboard;
+        _resources = resources;
+        _budgetService = budgetService;
         RetryStatus = retryStatus ?? new RetryStatusViewModel();
         var initialModel = settings?.DefaultModel ?? SettingsService.DefaultModelValue;
-        ModelPicker = new ModelPickerViewModel(catalog ?? ModelCatalogLoader.Default, initialModel);
+        _catalog = catalog ?? ModelCatalogLoader.Default;
+        ModelPicker = new ModelPickerViewModel(_catalog, initialModel);
         Turns = new ReadOnlyObservableCollection<ConversationTurnViewModel>(_turns);
+        BuildBudget();
+    }
+
+    private ContextBudgetViewModel? _budget;
+
+    /// <summary>The composer's live context-budget meter (SPEC §3.2, §8), or null when unwired.</summary>
+    public ContextBudgetViewModel? Budget
+    {
+        get => _budget;
+        private set
+        {
+            if (SetProperty(ref _budget, value))
+                OnPropertyChanged(nameof(HasBudget));
+        }
+    }
+
+    /// <summary>Whether the composer budget meter is available (drives its visibility).</summary>
+    public bool HasBudget => _budget is not null;
+
+    private void BuildBudget()
+    {
+        if (_resources is null || _budgetService is null)
+        {
+            Budget = null;
+            return;
+        }
+
+        var window = new ModelWindow(ModelPicker.CurrentModelId, ModelWindowTokens(ModelPicker.CurrentModelId));
+        Budget = new ContextBudgetViewModel(
+            ProjectId, _resources, _budgetService, window, new ContextBudgetScope(OverheadTokens: 64));
+    }
+
+    private long ModelWindowTokens(string modelId) => _catalog.TryGet(modelId)?.ContextTokens ?? 200_000;
+
+    /// <summary>
+    /// Switches the conversation to the largest-context-window model and refreshes the budget meter
+    /// (the composer's "switch to a larger-window model" resolution; never truncates, SPEC §3.2).
+    /// </summary>
+    [RelayCommand]
+    private void SwitchBudgetModel()
+    {
+        var largest = _catalog.Tiers.Concat(_catalog.AdditionalModels)
+            .OrderByDescending(m => m.ContextTokens)
+            .FirstOrDefault();
+        if (largest is null)
+            return;
+        ModelPicker.SelectModel(largest.Id);
+        _budget?.SwitchModel(new ModelWindow(largest.Id, largest.ContextTokens));
     }
 
 

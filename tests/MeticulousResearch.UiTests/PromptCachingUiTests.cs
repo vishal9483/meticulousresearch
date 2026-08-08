@@ -61,7 +61,9 @@ public sealed class PromptCachingUiTests
         var thread = conversations.FindFirstDescendant(cf => cf.ByAutomationId("ConversationThread"));
         Assert.NotNull(thread);
 
-        var actions = thread!.FindFirstDescendant(cf => cf.ByAutomationId("TurnActions"))
+        var actions = FlaUI.Core.Tools.Retry.WhileNull(
+            () => thread!.FindFirstDescendant(cf => cf.ByAutomationId("TurnActions")),
+            TimeSpan.FromSeconds(10)).Result
             ?? throw new NotSupportedException(
                 "A completed assistant turn should expose its cost badge/breakdown affordances (turn-metadata-actions).");
         return actions;

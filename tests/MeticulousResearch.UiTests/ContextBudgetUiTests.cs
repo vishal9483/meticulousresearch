@@ -63,14 +63,16 @@ public sealed class ContextBudgetUiTests
     }
 
     /// <summary>
-    /// Opens the composer that hosts the budget meter. The composer is owned by the M2
-    /// conversations/streaming features; until they land there is nothing to drive, so this fails
-    /// loudly rather than passing silently.
+    /// Opens the composer that hosts the budget meter by opening the seeded sample project's
+    /// Conversations section (the composer is owned by the M2 conversations/streaming features).
     /// </summary>
     private AutomationElement OpenComposer()
     {
         var window = _fixture.MainWindow;
-        return window.FindFirstDescendant(cf => cf.ByAutomationId("ConversationComposer"))
+        var center = ShellUiFlow.OpenSection(window, "Conversations");
+        return FlaUI.Core.Tools.Retry.WhileNull(
+            () => center.FindFirstDescendant(cf => cf.ByAutomationId("ConversationComposer")),
+            TimeSpan.FromSeconds(10)).Result
             ?? throw new NotSupportedException(
                 "The composer that hosts the context-budget meter is owned by the conversations/streaming " +
                 "(M2) features; wire this helper to the composer surface when it lands.");

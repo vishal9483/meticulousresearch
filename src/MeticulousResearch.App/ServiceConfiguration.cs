@@ -318,7 +318,28 @@ public static class ServiceConfiguration
         // and the conversation/streaming/artifact services resolve IChatService lazily.
         if (System.Environment.GetEnvironmentVariable("METICULOUS_UI_FAKE_AI") == "1")
         {
-            services.AddSingleton<IChatService, Services.FakeChatService>();
+            // Wrap the fake in the same backoff decorator the real backend uses, wired to the shared
+            // retry observer, so the @ui harness exercises the non-alarming "retrying…" indicator on
+            // a scripted 429 (rate-limit-backoff, SPEC §8) — otherwise deterministic and offline.
+            services.AddSingleton<IChatService>(sp => new Core.Ai.Backoff.RetryingChatService(
+                new Services.FakeChatService(),
+                new Core.Ai.Backoff.BackoffPolicy(TimeSpan.FromSeconds(1), maxAttempts: 5, sp.GetRequiredService<Core.Ai.Backoff.IJitterSource>()),
+                sp.GetRequiredService<Core.Ai.Backoff.IRetryDelay>(),
+                sp.GetRequiredService<Core.Ai.Backoff.IRetryObserver>()));
+        }
+
+        // @ui harness only: enable caption-on-add with a deterministic offline captioner so the
+        // seeded image resource carries a cached caption (image-vision-caption, SPEC §3.2.1) without
+        // a vision call, key, or network. Last registration wins.
+        if (System.Environment.GetEnvironmentVariable("METICULOUS_UI_SEED") == "1")
+        {
+            services.AddSingleton<IResourceService>(sp => new ResourceService(
+                sp.GetRequiredService<DataStore>(),
+                sp.GetRequiredService<ITokenEstimator>(),
+                Core.Resources.Extraction.FileExtractionPipeline.CreateDefault(),
+                sp.GetRequiredService<IUrlFetcher>(),
+                new Services.SampleImageCaptioner(),
+                new Core.Resources.Vision.ImageCaptionOptions { CaptionOnAdd = true }));
         }
 
         return services;

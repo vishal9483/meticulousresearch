@@ -46,25 +46,30 @@
             </StackPanel>
 
             <!-- Consolidated cost panel (cost-tracking, SPEC §3.6, §9.1(7)): total spend with
-                 breakdowns by conversations-vs-artifacts, by model, and by time window. -->
-            <Border x:Name="ConsolidatedCostPanel" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6"
-                    Padding="16" Margin="0,20,0,0"
-                    AutomationProperties.AutomationId="ConsolidatedCostPanel">
+                 breakdowns by conversations-vs-artifacts, by model, and by time window. The
+                 ScrollViewer surfaces the panel id to UIA (a Border does not). -->
+            <ScrollViewer Margin="0,20,0,0"
+                          VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                          AutomationProperties.AutomationId="ConsolidatedCostPanel">
+              <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Padding="16">
                 <StackPanel DataContext="{Binding CostPanel}">
                     <TextBlock Text="Cost" FontWeight="SemiBold" />
                     <TextBlock Text="{Binding TotalDisplay}" FontSize="24" FontWeight="Bold"
                                AutomationProperties.AutomationId="CostTotal" />
 
                     <!-- By source: conversations vs artifacts -->
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0"
-                                AutomationProperties.AutomationId="CostBySource">
+                    <ScrollViewer Margin="0,12,0,0"
+                                  VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                                  AutomationProperties.AutomationId="CostBySource">
+                      <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Conversations: " Foreground="#777" />
                         <TextBlock Text="{Binding ConversationsDisplay}"
                                    AutomationProperties.AutomationId="CostConversations" />
                         <TextBlock Text="   Artifacts: " Foreground="#777" />
                         <TextBlock Text="{Binding ArtifactsDisplay}"
                                    AutomationProperties.AutomationId="CostArtifacts" />
-                    </StackPanel>
+                      </StackPanel>
+                    </ScrollViewer>
 
                     <!-- By model -->
                     <TextBlock Text="By model" Foreground="#777" Margin="0,12,0,4" />
@@ -81,15 +86,18 @@
                     </ItemsControl>
 
                     <!-- By time window -->
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0"
-                                AutomationProperties.AutomationId="CostByWindow">
+                    <ScrollViewer Margin="0,12,0,0"
+                                  VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                                  AutomationProperties.AutomationId="CostByWindow">
+                      <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Today: " Foreground="#777" />
                         <TextBlock Text="{Binding Today}" AutomationProperties.AutomationId="CostToday" />
                         <TextBlock Text="   This week: " Foreground="#777" />
                         <TextBlock Text="{Binding Week}" AutomationProperties.AutomationId="CostWeek" />
                         <TextBlock Text="   All time: " Foreground="#777" />
                         <TextBlock Text="{Binding AllTime}" AutomationProperties.AutomationId="CostAllTime" />
-                    </StackPanel>
+                      </StackPanel>
+                    </ScrollViewer>
 
                     <!-- Export usage CSV (usage-csv-export, SPEC §3.6, §9.1(7)): raw per-turn data. -->
                     <Button Content="Export usage CSV" Margin="0,12,0,0" Padding="12,8"
@@ -99,7 +107,8 @@
                     <TextBlock Text="{Binding ExportConfirmation}" Foreground="#2E7D32" Margin="0,6,0,0"
                                AutomationProperties.AutomationId="ExportUsageCsvConfirmation" />
                 </StackPanel>
-            </Border>
+              </Border>
+            </ScrollViewer>
 
             <!-- Quick actions -->
             <TextBlock Text="Quick actions" FontWeight="SemiBold" Margin="0,24,0,8" />

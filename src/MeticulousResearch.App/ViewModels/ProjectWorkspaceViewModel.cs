@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.App.Services;
 using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
+using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Cost;
 using MeticulousResearch.Core.Export;
@@ -13,6 +15,7 @@ using MeticulousResearch.Core.Projects;
 using MeticulousResearch.Core.Resources;
 using MeticulousResearch.Core.Search;
 using MeticulousResearch.Core.Settings;
+using MeticulousResearch.Core.Turns;
 
 namespace MeticulousResearch.App.ViewModels;
 
@@ -57,13 +60,18 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
         IArtifactService? artifacts = null,
         IArtifactDiffService? diffService = null,
         IEditWithClaudeService? editService = null,
-        IExportService? exportService = null)
+        IExportService? exportService = null,
+        ITurnActionService? turnActions = null,
+        ITurnCostCalculator? turnCostCalculator = null,
+        IClipboardService? clipboard = null,
+        RetryStatusViewModel? retryStatus = null,
+        IContextBudgetService? budgetService = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
-            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog, streaming),
+            [NavigationSection.Conversations] = new ConversationsViewModel(projectId, conversations, settings, catalog, streaming, turnActions, turnCostCalculator, clipboard, retryStatus, cost, resources, budgetService),
             [NavigationSection.Resources] = new ResourcesViewModel(projectId, resources, search),
             [NavigationSection.Artifacts] = new ArtifactsViewModel(projectId, artifacts, diffService, editService, catalog, exportService),
             [NavigationSection.Dashboard] = new DashboardViewModel(projectId, projects, cost),
