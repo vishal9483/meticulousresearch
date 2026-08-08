@@ -2,10 +2,12 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:MeticulousResearch.App.ViewModels"
+             xmlns:views="clr-namespace:MeticulousResearch.App.Views"
              d:DataContext="{d:DesignInstance vm:ProjectsHomeViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              AutomationProperties.AutomationId="ProjectsHomeRoot"
+             Loaded="OnLoaded"
              mc:Ignorable="d">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -36,6 +38,19 @@
                         AutomationProperties.AutomationId="CreateProjectButton"
                         Content="Create project" Margin="8,0,0,0" Padding="12,6"
                         Command="{Binding CreateProjectCommand}" />
+                <!-- New-project flow: opens the deliverable-template gallery (SPEC §3.4.1) so a
+                     project can be started from a template. -->
+                <Button x:Name="NewProjectButton"
+                        AutomationProperties.AutomationId="NewProjectButton"
+                        AutomationProperties.Name="New project"
+                        Content="New project" Margin="8,0,0,0" Padding="12,6"
+                        Click="OnNewProject" />
+                <!-- Restore a project from a backup zip (backup-restore, SPEC §8, §9.1(9)). -->
+                <Button x:Name="RestoreProjectButton"
+                        AutomationProperties.AutomationId="RestoreProjectButton"
+                        AutomationProperties.Name="Restore project"
+                        Content="Restore project" Margin="8,0,0,0" Padding="12,6"
+                        Click="OnRestoreProject" />
             </StackPanel>
             <TextBlock x:Name="ValidationError"
                        AutomationProperties.AutomationId="NewProjectValidationError"
@@ -133,6 +148,13 @@
                 </StackPanel>
                 </ScrollViewer>
             </Border>
+        </Grid>
+
+        <!-- New-project template gallery overlay (deliverable-templates, SPEC §3.4.1). Shown when
+             "New project" is chosen; the code-behind sets its view-model and reveals it. -->
+        <Grid x:Name="TemplateGalleryOverlay" Grid.Row="0" Grid.RowSpan="4"
+              Background="{DynamicResource SurfaceBrush}" Visibility="Collapsed">
+            <views:TemplateGalleryView x:Name="TemplateGalleryHost" />
         </Grid>
     </Grid>
 </UserControl>

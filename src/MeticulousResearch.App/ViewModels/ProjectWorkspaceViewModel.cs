@@ -6,6 +6,7 @@ using MeticulousResearch.App.ViewModels.Sections;
 using MeticulousResearch.Core.Ai;
 using MeticulousResearch.Core.Artifacts;
 using MeticulousResearch.Core.Artifacts.Diff;
+using MeticulousResearch.Core.Backup;
 using MeticulousResearch.Core.Budget;
 using MeticulousResearch.Core.Conversations;
 using MeticulousResearch.Core.Cost;
@@ -31,6 +32,7 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
     public const NavigationSection DefaultSection = NavigationSection.Dashboard;
 
     private readonly Dictionary<NavigationSection, SectionViewModel> _sections;
+    private readonly IProjectBackupService? _backup;
 
     /// <summary>
     /// Builds a workspace for <paramref name="projectId"/> without live dashboard figures
@@ -65,9 +67,11 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
         ITurnCostCalculator? turnCostCalculator = null,
         IClipboardService? clipboard = null,
         RetryStatusViewModel? retryStatus = null,
-        IContextBudgetService? budgetService = null)
+        IContextBudgetService? budgetService = null,
+        IProjectBackupService? backup = null)
     {
         ProjectId = projectId ?? throw new ArgumentNullException(nameof(projectId));
+        _backup = backup;
 
         _sections = new Dictionary<NavigationSection, SectionViewModel>
         {
@@ -125,6 +129,29 @@ public sealed partial class ProjectWorkspaceViewModel : ViewModelBase, IProjectS
 
     /// <summary>Returns the section view-model for the given section (used by @ui/no-placeholder tests).</summary>
     public SectionViewModel GetSection(NavigationSection section) => _sections[section];
+
+    private string _backupConfirmation = "";
+
+    /// <summary>A confirmation shown after a successful backup (backup-restore, SPEC §8, §9.1(9)).</summary>
+    public string BackupConfirmation
+    {
+        get => _backupConfirmation;
+        private set => SetProperty(ref _backupConfirmation, value);
+    }
+
+    /// <summary>
+    /// Backs up this project to <paramref name="destinationZip"/> (backup-restore, SPEC §8,
+    /// §9.1(9)) and raises a confirmation. The destination picker is a shell-level dialog owned by
+    /// the view; this method is window-free so it stays <c>@unit</c>-testable.
+    /// </summary>
+    /// <param name="destinationZip">The absolute path of the backup zip to write.</param>
+    public void BackupProject(string destinationZip)
+    {
+        if (_backup is null)
+            return;
+        _backup.Backup(ProjectId, destinationZip);
+        BackupConfirmation = $"Backup written to {destinationZip}";
+    }
 
     /// <summary>
     /// Accepts the project id (first navigation parameter) and, optionally, an initial

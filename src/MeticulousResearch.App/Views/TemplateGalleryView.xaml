@@ -7,29 +7,34 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <!-- Deliverable-template gallery (SPEC §3.4.1): each template's name, description, and a
-         scaffold-derived preview, surfaced in the New-artifact and New-project flows. -->
-    <ScrollViewer Background="{DynamicResource SurfaceBrush}">
-        <StackPanel Margin="24" x:Name="TemplateGalleryRoot"
-                    AutomationProperties.AutomationId="TemplateGallery">
+         scaffold-derived preview, surfaced in the New-artifact and New-project flows. The
+         AutomationId is on the ScrollViewer (a StackPanel does not surface to UIA). -->
+    <ScrollViewer Background="{DynamicResource SurfaceBrush}"
+                  AutomationProperties.AutomationId="TemplateGallery">
+        <StackPanel Margin="24" x:Name="TemplateGalleryRoot">
             <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,16" />
 
             <ItemsControl ItemsSource="{Binding Templates}"
                           AutomationProperties.AutomationId="TemplateGalleryList">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="0,4" Padding="12" BorderThickness="1"
-                                BorderBrush="{DynamicResource BorderBrush}"
-                                AutomationProperties.AutomationId="TemplateGalleryItem"
-                                AutomationProperties.Name="{Binding Name}">
-                            <StackPanel>
-                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16"
-                                           AutomationProperties.AutomationId="TemplateName" />
-                                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,4,0,0"
-                                           AutomationProperties.AutomationId="TemplateDescription" />
-                                <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0"
-                                           AutomationProperties.AutomationId="TemplatePreview" />
-                            </StackPanel>
-                        </Border>
+                        <!-- A disabled ScrollViewer carries the item id (a Border does not surface). -->
+                        <ScrollViewer AutomationProperties.AutomationId="TemplateGalleryItem"
+                                      AutomationProperties.Name="{Binding Name}"
+                                      VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"
+                                      Margin="0,4">
+                            <Border Padding="12" BorderThickness="1"
+                                    BorderBrush="{DynamicResource BorderBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16"
+                                               AutomationProperties.AutomationId="TemplateName" />
+                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                               AutomationProperties.AutomationId="TemplateDescription" />
+                                    <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" Opacity="0.7" Margin="0,4,0,0"
+                                               AutomationProperties.AutomationId="TemplatePreview" />
+                                </StackPanel>
+                            </Border>
+                        </ScrollViewer>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
