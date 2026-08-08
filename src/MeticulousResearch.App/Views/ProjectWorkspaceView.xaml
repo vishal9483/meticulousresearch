@@ -81,7 +81,18 @@
                 BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
             <ScrollViewer x:Name="RightPane" AutomationProperties.AutomationId="RightPane"
                           HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
-                <TextBlock Text="Context" Margin="16" Foreground="#999" VerticalAlignment="Top" />
+                <StackPanel Margin="16" VerticalAlignment="Top">
+                    <TextBlock Text="Context" Foreground="#999" />
+                    <!-- Project menu action: back up this project to a zip (backup-restore, SPEC §8,
+                         §9.1(9)). The destination picker is a shell dialog (temp path under @ui). -->
+                    <Button Content="Back up project" Margin="0,16,0,0" Padding="10,6"
+                            HorizontalAlignment="Left"
+                            AutomationProperties.AutomationId="BackupProjectButton"
+                            Click="OnBackupProject" />
+                    <TextBlock Text="{Binding BackupConfirmation}" Foreground="#2E7D32" Margin="0,6,0,0"
+                               TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="BackupProjectConfirmation" />
+                </StackPanel>
             </ScrollViewer>
         </Border>
     </Grid>

@@ -55,7 +55,7 @@ Image|OnboardingBrandIcon|Application icon
 Text|WelcomeTitle|MeticulousResearch Desktop
 Text|ProductIntro|Generate rigorous, source-grounded research documents with Claude.
 Text|PrivacyStatement|Your data stays on this machine. MeticulousResearch is local-first — projects, resources, and generated documents live in your data directory, not in the cloud.
-Text|DataLocation|Your data is stored in: C:\Users\vhanakaw\AppData\Local\Temp\MeticulousResearch-uitests-70ae3252e09b4cd68e997780faf1eeab
+Text|DataLocation|Your data is stored in: C:\Users\vhanakaw\AppData\Local\Temp\MeticulousResearch-uitests-b3e69b9d41f04d6cb6a17ed0aee73a4b
 Button|OnboardingBackButton|Back
 Text||Back
 Button|OnboardingNextButton|Next
@@ -140,7 +140,7 @@ Text||Conversations
 Text|ArtifactCount|1
 Text||Artifacts
 Text||Last activity: 
-Text|LastActivity|8/8/2026 7:28 AM +00:00
+Text|LastActivity|8/8/2026 7:45 AM +00:00
 Pane|ConsolidatedCostPanel|
 Text||Cost
 Text|CostTotal|$0.09
@@ -178,5 +178,8 @@ Text||Add resource
 DataItem||New artifact
 Button||New artifact
 Text||New artifact
-Pane|RightPane|Context
+Pane|RightPane|
 Text||Context
+Button|BackupProjectButton|Back up project
+Text||Back up project
+Text|BackupProjectConfirmation|

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MeticulousResearch.App.Navigation;
+using MeticulousResearch.Core.Backup;
 using MeticulousResearch.Core.Projects;
 
 namespace MeticulousResearch.App.ViewModels;
@@ -16,6 +17,7 @@ public sealed partial class ProjectsHomeViewModel : ViewModelBase
 {
     private readonly IProjectService? _projects;
     private readonly INavigationService? _navigation;
+    private readonly IProjectBackupService? _backup;
 
     /// <summary>Design-time / navigation-plumbing fallback (no service; empty list).</summary>
     public ProjectsHomeViewModel()
@@ -24,9 +26,16 @@ public sealed partial class ProjectsHomeViewModel : ViewModelBase
 
     /// <summary>Creates the Projects home over the project service and navigation.</summary>
     public ProjectsHomeViewModel(IProjectService projects, INavigationService navigation)
+        : this(projects, navigation, null)
+    {
+    }
+
+    /// <summary>Creates the Projects home over the project service, navigation, and backup service.</summary>
+    public ProjectsHomeViewModel(IProjectService projects, INavigationService navigation, IProjectBackupService? backup)
     {
         _projects = projects ?? throw new ArgumentNullException(nameof(projects));
         _navigation = navigation ?? throw new ArgumentNullException(nameof(navigation));
+        _backup = backup;
         Refresh();
     }
 
@@ -126,6 +135,39 @@ public sealed partial class ProjectsHomeViewModel : ViewModelBase
         NewProjectName = "";
         Refresh();
         OpenProject(project.Id);
+    }
+
+    /// <summary>
+    /// Restores a project from a backup zip as a copy (backup-restore, SPEC §8, §9.1(9)) and
+    /// refreshes the list so the restored project appears. The destination picker is a shell-level
+    /// dialog owned by the view.
+    /// </summary>
+    /// <param name="zipPath">The absolute path of the backup zip to restore from.</param>
+    public void RestoreProject(string zipPath)
+    {
+        if (_backup is null)
+            return;
+        _backup.Restore(zipPath, RestoreConflictPolicy.RestoreAsCopy);
+        Refresh();
+    }
+
+    /// <summary>
+    /// @ui-deterministic restore path: backs up an existing project to a temp zip and restores it as
+    /// a copy, so a genuinely restored project appears without driving a native file picker (which
+    /// UIA cannot operate). Used only under the @ui harness by the view code-behind.
+    /// </summary>
+    public void RestoreFromDeterministicBackup()
+    {
+        if (_backup is null)
+            return;
+        var source = Projects.FirstOrDefault();
+        if (source is null)
+            return;
+        var zip = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"restore-{Guid.NewGuid():N}.zip");
+        _backup.Backup(source.Id, zip);
+        _backup.Restore(zip, RestoreConflictPolicy.RestoreAsCopy);
+        try { System.IO.File.Delete(zip); } catch { /* best-effort cleanup */ }
+        Refresh();
     }
 
     /// <summary>Opens a project's three-pane workspace.</summary>
