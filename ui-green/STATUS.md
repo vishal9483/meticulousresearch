@@ -14,9 +14,13 @@ Integration tip: **`f9e6e73`** (P1+P2+P3 merged). Milestone-1 (P1–P3) @ui: **3
 | P6-projects      | `feat/uigreen-p6` | TODO | – | Backup + Template gallery entry points |
 | P7-v1            | `feat/uigreen-p7` | BLOCKED | – | start only after P1–P6 green |
 
+## Autonomous run
+Master flows P1→P7 unattended; logs anything it can't green honestly to `BLOCKERS.md` and continues.
+No human sign-off between milestones. Merging to `main`/pushing still needs an explicit human ask.
+
 ## Next session — start here
 Branch off the integration tip `f9e6e73` (`test/e2e-suite`). Two P3 tests remain (see the P3
-"remaining" section below), then P4–P6. To finish P3: `git checkout -b feat/uigreen-p3b test/e2e-suite`,
+"remaining" section below and `BLOCKERS.md` B1/B2), then P4–P6. To finish P3: `git checkout -b feat/uigreen-p3b test/e2e-suite`,
 implement ImageAttachments + ToolTransparency, verify the P3 cluster + headless gate, merge back.
 Cluster re-run filter:
 ```powershell

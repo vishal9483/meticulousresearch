@@ -16,7 +16,9 @@ The prompt names: the **packet id** (e.g. `P3-conversations`), your **branch**
 1. `ui-green/PLAYBOOK.md` (once — the surfacing rule, `ShellUiFlow` API, the two flags, waits, gotchas).
 2. `ui-green/packets/<your-id>.md` (your job, owned files, asserted ids, known dependencies).
 3. Only the files your packet names: your cluster test files + your exclusively-owned app view(s)/VM.
-Do NOT read other packets, other clusters, or the whole repo.
+Do NOT read other packets, other clusters, or the whole repo. You exist to keep the master's context
+small: absorb the big test/app files and the build/test noise here, and return only a **compact
+structured summary** — never echo file contents or full logs back to the master.
 
 ## Rules
 - Edit ONLY: your cluster's `*UiTests.cs` files and your packet's **exclusively-owned** app files.
@@ -42,6 +44,16 @@ Do NOT read other packets, other clusters, or the whole repo.
 4. When the cluster is green, run the previously-green subset + the headless gate to confirm no
    regression.
 
+## When a test can't be greened honestly (report — don't stall, don't cheat)
+This is a long autonomous run: never spin forever and never fake a pass. If, after a genuine attempt,
+a test needs something you may not build here — a shared-infra seam, an unimplemented app feature, an
+interactive/live-only environment, or non-deterministic timing — **stop working that one test**, keep
+it red, and describe it precisely in your summary under **"Blockers / Unimplemented"** so the master
+can log it to `ui-green/BLOCKERS.md`. Classify each: `UNIMPLEMENTED` (affordance the app lacks),
+`SEAM` (needs a fake/seed/backend change — usually a MASTER request), `ENV` (needs live key /
+interactive desktop / installer), or `FLAKY`. Green everything you honestly can; report the rest.
+Do not soften, skip, or tautologize an assertion to clear a blocker.
+
 ## Verify
 ```powershell
 dotnet build MeticulousResearch.sln -c Debug
@@ -54,4 +66,6 @@ dotnet test MeticulousResearch.sln -c Debug --filter "Category!=ui&Category!=man
 - Files changed (test files + owned app files) with a one-line reason each.
 - Any **real app bugs** found/fixed.
 - **Requests to MASTER** (exact shared-infra change needed), or "none".
+- **Blockers / Unimplemented** — each residual red test with category (`UNIMPLEMENTED`/`SEAM`/`ENV`/
+  `FLAKY`), why it's blocked, and the smallest next step. Say "none" only if the cluster is fully green.
 - Regression check result + headless-gate result.
