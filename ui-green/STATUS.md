@@ -5,8 +5,8 @@ Baseline: **33/108 `@ui` passing**. Headless gate: **GREEN (646)**. Branch: `tes
 ## Packet status
 | Packet | Owner branch | State | @ui pass in cluster | Notes |
 |--------|--------------|-------|---------------------|-------|
-| P1-resources     | `feat/uigreen-p1` | TODO | – | resources sections partly green already |
-| P2-artifacts     | `feat/uigreen-p2` | TODO | – | ArtifactDiff needs ≥2 versions (see packet) |
+| P1-resources     | `feat/uigreen-p1` | DONE (merged d146de0) | 10/10 | surfaced Extraction/Fetch/RemoveConfirm/SourceUri ids |
+| P2-artifacts     | `feat/uigreen-p2` | WIP  | – | ArtifactDiff needs ≥2 versions (see packet) |
 | P3-conversations | `feat/uigreen-p3` | TODO | – | biggest; contains the TurnActions/HasActions app bug |
 | P4-dashboard     | `feat/uigreen-p4` | TODO | – | UsageCsvExport |
 | P5-shell         | `feat/uigreen-p5` | TODO | – | needs generic EmptyState/SkeletonLoader/ErrorState ids |

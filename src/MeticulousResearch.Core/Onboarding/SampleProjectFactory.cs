@@ -40,13 +40,18 @@ public sealed class SampleProjectFactory : ISampleProjectFactory
         _resources.AddText(project.Id, SampleContent.ResourceOneTitle, SampleContent.ResourceOneText);
         _resources.AddText(project.Id, SampleContent.ResourceTwoTitle, SampleContent.ResourceTwoText);
 
-        _artifacts.CreateFromContent(
+        var artifact = _artifacts.CreateFromContent(
             project.Id,
             ArtifactTypes.Doc,
             SampleContent.ArtifactTitle,
             SampleContent.MarketResearchReport,
             contentFormat: null,
             provenance: ArtifactProvenance.User());
+
+        // Add two more versions so the sample artifact has a real history (3 versions) for the
+        // version-history rail and diff mode; every change funnels through AddVersion (SPEC §3.4).
+        _artifacts.AddVersion(artifact.Id, SampleContent.MarketResearchReportV2, ArtifactProvenance.User());
+        _artifacts.AddVersion(artifact.Id, SampleContent.MarketResearchReportV3, ArtifactProvenance.User());
 
         return project;
     }

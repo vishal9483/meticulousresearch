@@ -106,12 +106,70 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
         {
             if (SetProperty(ref _selectedArtifact, value))
             {
+                IsConfirmingDelete = false;
                 BuildDiff();
                 BuildEditBar();
                 BuildExportBar();
+                BuildVersionRail();
+                OnPropertyChanged(nameof(HasSelection));
             }
         }
     }
+
+    /// <summary>Whether an artifact is selected (drives the editor's version rail / manage actions).</summary>
+    public bool HasSelection => _selectedArtifact is not null;
+
+    /// <summary>The selected artifact's version history, newest-first, for the version rail (SPEC §3.4).</summary>
+    public ObservableCollection<ArtifactVersionRowViewModel> Versions { get; } =
+        new ObservableCollection<ArtifactVersionRowViewModel>();
+
+    private void BuildVersionRail()
+    {
+        Versions.Clear();
+        if (_artifacts is null || _selectedArtifact is null)
+            return;
+
+        var artifact = _artifacts.Get(_selectedArtifact.Id);
+        if (artifact is null)
+            return;
+
+        foreach (var version in _artifacts.GetHistory(_selectedArtifact.Id))
+            Versions.Add(new ArtifactVersionRowViewModel(version, isCurrent: version.Id == artifact.CurrentVersionId));
+    }
+
+    private bool _isConfirmingDelete;
+
+    /// <summary>Whether the delete-confirmation prompt is shown (nothing is deleted until confirmed).</summary>
+    public bool IsConfirmingDelete
+    {
+        get => _isConfirmingDelete;
+        private set => SetProperty(ref _isConfirmingDelete, value);
+    }
+
+    /// <summary>Opens the delete-confirmation prompt for the selected artifact; deletes nothing yet.</summary>
+    [RelayCommand]
+    private void RequestDeleteArtifact()
+    {
+        if (_selectedArtifact is null)
+            return;
+        IsConfirmingDelete = true;
+    }
+
+    /// <summary>Confirms deletion: removes the selected artifact and its history, then reloads.</summary>
+    [RelayCommand]
+    private void ConfirmDeleteArtifact()
+    {
+        if (_artifacts is null || _selectedArtifact is null)
+            return;
+
+        _artifacts.DeleteArtifact(_selectedArtifact.Id);
+        IsConfirmingDelete = false;
+        Load();
+    }
+
+    /// <summary>Dismisses the delete-confirmation prompt without deleting anything.</summary>
+    [RelayCommand]
+    private void CancelDeleteArtifact() => IsConfirmingDelete = false;
 
     private EditWithClaudeViewModel? _editWithClaude;
 
@@ -122,8 +180,15 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     public EditWithClaudeViewModel? EditWithClaude
     {
         get => _editWithClaude;
-        private set => SetProperty(ref _editWithClaude, value);
+        private set
+        {
+            if (SetProperty(ref _editWithClaude, value))
+                OnPropertyChanged(nameof(HasEditWithClaude));
+        }
     }
+
+    /// <summary>Whether the edit-with-Claude bar is available for the selected artifact.</summary>
+    public bool HasEditWithClaude => _editWithClaude is not null;
 
     private void BuildEditBar()
     {
@@ -145,8 +210,15 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     public BrandedExportViewModel? Export
     {
         get => _export;
-        private set => SetProperty(ref _export, value);
+        private set
+        {
+            if (SetProperty(ref _export, value))
+                OnPropertyChanged(nameof(HasExport));
+        }
     }
+
+    /// <summary>Whether the branded-export bar is available for the selected artifact.</summary>
+    public bool HasExport => _export is not null;
 
     private void BuildExportBar()
     {
@@ -182,8 +254,15 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     public ArtifactDiffViewModel? Diff
     {
         get => _diff;
-        private set => SetProperty(ref _diff, value);
+        private set
+        {
+            if (SetProperty(ref _diff, value))
+                OnPropertyChanged(nameof(HasDiff));
+        }
     }
+
+    /// <summary>Whether diff mode is available for the selected artifact (the panel is shown).</summary>
+    public bool HasDiff => _diff is not null;
 
     private void BuildDiff()
     {
@@ -222,14 +301,50 @@ public sealed partial class ArtifactsViewModel : SectionViewModel
     {
         Artifacts.Clear();
         if (_artifacts is null)
+        {
+            SelectedArtifact = null;
             return;
+        }
 
         foreach (var artifact in _artifacts.List(ProjectId))
             Artifacts.Add(new ArtifactRowViewModel(artifact));
 
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(HasArtifacts));
+
+        // Land on a real editor destination so the version rail, diff, edit, and export affordances
+        // are populated as soon as the section opens (SPEC §3.4 editor).
+        SelectedArtifact = Artifacts.FirstOrDefault();
     }
+}
+
+/// <summary>A single version row in the artifact editor's version-history rail (SPEC §3.4).</summary>
+public sealed class ArtifactVersionRowViewModel
+{
+    /// <summary>Projects a persisted <see cref="ArtifactVersion"/> into a rail row.</summary>
+    public ArtifactVersionRowViewModel(ArtifactVersion version, bool isCurrent)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        Id = version.Id;
+        VersionNo = version.VersionNo;
+        CreatedBy = version.CreatedBy;
+        IsCurrent = isCurrent;
+    }
+
+    /// <summary>The version id.</summary>
+    public string Id { get; }
+
+    /// <summary>The 1-based per-artifact version number.</summary>
+    public long VersionNo { get; }
+
+    /// <summary>Who produced the version (<c>user</c> | <c>claude</c>).</summary>
+    public string CreatedBy { get; }
+
+    /// <summary>Whether this is the artifact's current version (drives the current-version marker).</summary>
+    public bool IsCurrent { get; }
+
+    /// <summary>Display label for the rail row.</summary>
+    public string Label => $"Version {VersionNo} · {CreatedBy}";
 }
 
 /// <summary>A single artifact row in the Artifacts list (title + type).</summary>

@@ -36,29 +36,26 @@ Text||Dashboard
 Text||Project overview: resources, artifacts, activity and cost.
 Text|ResourceCount|9
 Text||Resources
-Text|ConversationCount|5
+Text|ConversationCount|0
 Text||Conversations
-Text|ArtifactCount|2
+Text|ArtifactCount|1
 Text||Artifacts
 Text||Last activity: 
-Text|LastActivity|8/8/2026 4:53 AM +00:00
+Text|LastActivity|8/8/2026 5:40 AM +00:00
 Text||Cost
-Text|CostTotal|$0.07
+Text|CostTotal|$0.00
 Text||Conversations: 
-Text|CostConversations|$0.07
+Text|CostConversations|$0.00
 Text||   Artifacts: 
 Text|CostArtifacts|$0.00
 Text||By model
 List|CostByModel|
-DataItem||ModelSpend { Model = claude-opus-5, Cost = 0.0675, CostDisplay = $0.07 }
-Text||claude-opus-5
-Text||$0.07
 Text||Today: 
-Text|CostToday|0.0675
+Text|CostToday|0
 Text||   This week: 
-Text|CostWeek|0.0675
+Text|CostWeek|0
 Text||   All time: 
-Text|CostAllTime|0.0675
+Text|CostAllTime|0
 Button|ExportUsageCsvButton|Export usage CSV
 Text||Export usage CSV
 Text|ExportUsageCsvConfirmation|

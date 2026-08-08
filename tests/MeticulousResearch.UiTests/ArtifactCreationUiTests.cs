@@ -24,7 +24,8 @@ public sealed class ArtifactCreationUiTests
     [Fact]
     public void The_Artifacts_view_shows_a_designed_empty_state()
     {
-        var artifacts = OpenArtifactsView(_fixture.MainWindow);
+        // A project with no artifacts: a fresh empty project, not the populated sample.
+        var artifacts = OpenEmptyArtifactsView(_fixture.MainWindow);
 
         // I see an empty state
         var emptyState = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("ArtifactsEmptyState"));
@@ -42,7 +43,8 @@ public sealed class ArtifactCreationUiTests
     [Fact]
     public void New_artifact_opens_the_artifact_editor_on_success()
     {
-        var artifacts = OpenArtifactsView(_fixture.MainWindow);
+        // Use a throwaway empty project so creating an artifact never pollutes the shared sample.
+        var artifacts = OpenEmptyArtifactsView(_fixture.MainWindow);
 
         // When I create/generate a new artifact via the flow
         var newButton = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("NewArtifactButton"))?.AsButton();
@@ -50,7 +52,9 @@ public sealed class ArtifactCreationUiTests
         newButton!.Click();
 
         // Then the artifact editor destination (the selectable artifact list) is shown with the new artifact
-        var list = artifacts.FindFirstDescendant(cf => cf.ByAutomationId("ArtifactsList"));
+        var list = FlaUI.Core.Tools.Retry.WhileNull(
+            () => artifacts.FindFirstDescendant(cf => cf.ByAutomationId("ArtifactsList")),
+            System.TimeSpan.FromSeconds(10)).Result;
         Assert.NotNull(list);
     }
 
@@ -97,6 +101,23 @@ public sealed class ArtifactCreationUiTests
         var workspace = ShellUiFlow.OpenSampleProject(window);
 
         var navItem = workspace.FindFirstDescendant(cf => cf.ByName("Conversations"))?.AsRadioButton();
+        Assert.NotNull(navItem);
+        navItem!.Click();
+
+        var center = window.FindFirstDescendant(cf => cf.ByAutomationId("CenterPane"));
+        Assert.NotNull(center);
+        return center!;
+    }
+
+    /// <summary>
+    /// Creates and opens a fresh empty project, then switches to its Artifacts section — used by the
+    /// empty-state scenario (a project with no artifacts).
+    /// </summary>
+    private static AutomationElement OpenEmptyArtifactsView(Window window)
+    {
+        var workspace = ShellUiFlow.OpenEmptyProject(window);
+
+        var navItem = workspace.FindFirstDescendant(cf => cf.ByName("Artifacts"))?.AsRadioButton();
         Assert.NotNull(navItem);
         navItem!.Click();
 

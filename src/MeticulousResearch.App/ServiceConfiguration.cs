@@ -180,6 +180,20 @@ public static class ServiceConfiguration
         // and, later, by edit-with-claude to review a Claude edit before keeping it.
         services.AddSingleton<IArtifactDiffService, ArtifactDiffService>();
 
+        // Edit-with-Claude (edit-with-claude/phase.md, SPEC §3.4, §9.1(5)): a follow-up instruction
+        // that generates a new artifact version through the shared chat gateway, grounded in the
+        // project's enabled resources and priced through the cost seam. Commits via AddVersion.
+        services.AddSingleton<IEditWithClaudeService>(sp => new EditWithClaudeService(
+            sp.GetRequiredService<IArtifactService>(),
+            sp.GetRequiredService<IChatService>(),
+            sp.GetRequiredService<IProjectService>(),
+            sp.GetRequiredService<IResourceService>(),
+            new CatalogTurnCostCalculator(sp.GetRequiredService<IModelCatalog>())));
+
+        // Branded export (branded-export/phase.md, SPEC §3.4.2, §9.1(6)): deterministic, offline
+        // DOCX/PDF rendering. Preview never writes to disk; only Save does.
+        services.AddSingleton<IExportService>(sp => new ExportService(sp.GetRequiredService<IClock>()));
+
         // Deliverable-template catalog + service (deliverable-templates/phase.md, SPEC §3.4.1):
         // config-driven research templates (shipped default merged with a Settings override JSON)
         // that drive artifact generation through IArtifactService.Generate with grounding-first
